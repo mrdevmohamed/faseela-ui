@@ -1,0 +1,15 @@
+# Upstream attribution and extraction notes
+
+Candidate upstream: [storytold/craft-libs](https://github.com/storytold/craft-libs), particularly `crates/ui`.
+
+The upstream project declares dual licensing under MIT OR Apache-2.0. Its original license texts and copyright notices must be retained for any files copied or adapted from it. A modified upstream file must carry a prominent notice that it has been changed.
+
+This repository is not a fork and does not imply endorsement by the Craft/ArtCraft contributors. The Faseela-owned code and branding are separate.
+
+## Porting policy
+
+1. Inspect the source file and all transitive local dependencies before copying it.
+2. Prefer small reusable UI modules over importing Craft application-specific code.
+3. Replace workspace-only dependencies with published crates or Faseela-owned equivalents.
+4. Keep original attribution in derived files.
+5. Add a compileable example and tests for every imported subsystem.
