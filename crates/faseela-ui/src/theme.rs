@@ -1,6 +1,6 @@
 //! Faseela's initial design tokens and egui style integration.
 
-use egui::{Color32, Context, CornerRadius, FontId, Margin, Rounding, Stroke, Style, Visuals};
+use egui::{Color32, Context, CornerRadius, FontId, Margin, Stroke, Style, Visuals};
 
 /// Official Faseela palette.
 pub mod palette {
@@ -38,9 +38,20 @@ pub fn apply_dark(ctx: &Context) {
     style.spacing.window_margin = Margin::same(16);
     style.spacing.item_spacing = egui::vec2(8.0, 8.0);
     style.spacing.button_padding = egui::vec2(12.0, 7.0);
-    style.text_styles.insert(
-        egui::TextStyle::Heading,
-        FontId::proportional(24.0),
-    );
+    style.text_styles.insert(egui::TextStyle::Heading, FontId::proportional(24.0));
     ctx.set_style(style);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn applies_faseela_palette() {
+        let ctx = Context::default();
+        apply_dark(&ctx);
+        let visuals = ctx.style().visuals.clone();
+        assert_eq!(visuals.panel_fill, palette::BACKGROUND);
+        assert_eq!(visuals.selection.bg_fill, palette::PRIMARY);
+    }
 }
