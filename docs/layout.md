@@ -51,7 +51,7 @@ use egui::Id;
 use faseela_ui::layout::{ResizeHandle, ResizeHandleStyle, SplitAxis};
 
 let resize = ResizeHandle::new(
-    Id::new("workspace-split"),
+    Id::unique("workspace-split"),
     SplitAxis::Horizontal,
     split.divider,
     "Resize workspace panes",
