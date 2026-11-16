@@ -391,10 +391,7 @@ mod tests {
             );
 
             output.textures_delta.clear();
-            (
-                result.expect("the root UI must render the handle"),
-                output,
-            )
+            (result.expect("the root UI must render the handle"), output)
         }
 
         fn settle(&mut self) -> ResizeResponse {
