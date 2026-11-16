@@ -172,7 +172,7 @@ impl Showcase {
                                         if selected {
                                             palette::SURFACE
                                         } else {
-                                            palette::SURFACE
+                                            palette::PRIMARY_LIGHT
                                         },
                                     ))
                                     .fill(if selected {
