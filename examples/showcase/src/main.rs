@@ -2,7 +2,7 @@ use eframe::egui;
 use faseela_ui::{
     buttons::{ButtonVisuals, IconButton, IconButtonStyle},
     direction::{self, Direction},
-    layout::{SplitAxis, SplitSize, fit_toolbar, split_rect},
+    layout::{ResizeHandle, ResizeHandleStyle, SplitAxis, SplitSize, fit_toolbar, split_rect},
     text,
     theme::{self, ThemePreset, palette},
 };
@@ -69,6 +69,7 @@ struct Showcase {
     icon_activated: bool,
     notifications: bool,
     compact_mode: bool,
+    split_size: Option<SplitSize>,
     applied_theme: Option<ThemePreset>,
 }
 
@@ -400,30 +401,25 @@ impl Showcase {
         });
     }
 
-    fn layout_preview(&self, ui: &mut egui::Ui) {
+    fn layout_preview(&mut self, ui: &mut egui::Ui) {
         egui::Frame::group(ui.style()).show(ui, |ui| {
             ui.set_width(ui.available_width());
             ui.heading("Responsive layout");
-            ui.label(
-                "Split geometry and toolbar overflow are calculated by shared layout helpers.",
-            );
+            ui.label("Drag the divider, or focus it and use the arrow keys to resize the panes.");
             ui.add_space(8.0);
 
             let width = ui.available_width().max(0.0);
             let (outer, _) = ui.allocate_exact_size(egui::vec2(width, 88.0), egui::Sense::hover());
-            if let Some(split) = split_rect(
-                outer,
-                SplitAxis::Horizontal,
-                SplitSize::Ratio(0.64),
-                8.0,
-                64.0,
-            ) {
-                // Geometry is physical; the app maps its logical leading pane according to RTL.
+            let current_size = self.split_size.unwrap_or(SplitSize::Ratio(0.64));
+
+            if let Some(split) = split_rect(outer, SplitAxis::Horizontal, current_size, 8.0, 64.0) {
+                // Geometry stays physical; the app maps logical leading/trailing panes for RTL.
                 let (leading, trailing) = if self.rtl {
                     (split.second, split.first)
                 } else {
                     (split.first, split.second)
                 };
+
                 let painter = ui.painter();
                 let text_color = ui.visuals().text_color();
                 painter.rect_filled(leading, egui::CornerRadius::same(8), palette::PRIMARY);
@@ -451,6 +447,41 @@ impl Showcase {
                     egui::FontId::proportional(11.0),
                     text_color,
                 );
+
+                let handle_style = ResizeHandleStyle {
+                    hovered: ui.visuals().widgets.hovered.bg_fill,
+                    dragged: ui.visuals().widgets.active.bg_fill,
+                    focused: ui.visuals().selection.bg_fill,
+                };
+                let mut handle = ResizeHandle::new(
+                    egui::Id::unique("showcase-workspace-split"),
+                    SplitAxis::Horizontal,
+                    split.divider,
+                    "Resize workspace panes",
+                    handle_style,
+                )
+                .hit_margin(8.0)
+                .keyboard_step(8.0)
+                .reversed(self.rtl);
+
+                // Expose the logical leading pane size to screen readers. In RTL that is the
+                // physical second pane, so its accessible value grows opposite to physical drag.
+                if split.available() >= 128.0 {
+                    let leading_size = if self.rtl {
+                        split.available() - split.first_size()
+                    } else {
+                        split.first_size()
+                    };
+                    handle = handle.value(leading_size, 64.0..=(split.available() - 64.0));
+                }
+
+                let resize = handle.show(ui);
+                if resize.delta != 0.0
+                    && let Some(next_size) = split.resized(current_size, resize.delta, 64.0)
+                {
+                    self.split_size = Some(next_size);
+                    ui.ctx().request_repaint();
+                }
             }
 
             ui.add_space(10.0);
@@ -460,6 +491,7 @@ impl Showcase {
             let toolbar_width = ui.available_width().max(0.0);
             let (toolbar, _) =
                 ui.allocate_exact_size(egui::vec2(toolbar_width, 32.0), egui::Sense::hover());
+
             if let Some(fit) = fit_toolbar(&widths, toolbar_width, 6.0, 42.0) {
                 let overflow_visible = !fit.overflow.is_empty();
                 let mut cursor = if self.rtl {
@@ -487,6 +519,7 @@ impl Showcase {
                         cursor += *item_width + 6.0;
                         rect
                     };
+
                     painter.rect_filled(
                         item_rect,
                         egui::CornerRadius::same(6),
@@ -514,6 +547,7 @@ impl Showcase {
                             egui::vec2(fit.overflow_width, toolbar.height()),
                         )
                     };
+
                     painter.rect_filled(
                         overflow_rect,
                         egui::CornerRadius::same(6),

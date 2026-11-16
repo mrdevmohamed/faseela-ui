@@ -44,7 +44,32 @@ if let Some(next_size) = split.resized(current_size, drag_delta, 160.0) {
 
 The original sizing mode is retained. For example, a ratio remains a ratio and a fixed-second request remains a fixed-second request. The drag minimum can be stricter than the minimum used for the current layout. If there is no resizable space or inputs are invalid, the result is `None`.
 
-The caller is responsible for pointer/keyboard input, focus, accessibility, and repainting. This keeps the geometry useful for desktop and WebAssembly applications without forcing a docking framework.
+The interactive ResizeHandle widget handles pointer dragging, axis-appropriate arrow keys, focus lifecycle, and AccessKit splitter actions. It still does not mutate application state: apply the returned delta through the split layout and persist the resulting SplitSize.
+
+```rust
+use egui::Id;
+use faseela_ui::layout::{ResizeHandle, ResizeHandleStyle, SplitAxis};
+
+let resize = ResizeHandle::new(
+    Id::unique("workspace-split"),
+    SplitAxis::Horizontal,
+    split.divider,
+    "Resize workspace panes",
+    ResizeHandleStyle {
+        hovered: ui.visuals().widgets.hovered.bg_fill,
+        dragged: ui.visuals().widgets.active.bg_fill,
+        focused: ui.visuals().selection.bg_fill,
+    },
+)
+.value(split.first_size(), 120.0..=(split.available() - 120.0))
+.show(ui);
+
+if let Some(next_size) = split.resized(current_size, resize.delta, 120.0) {
+    // Store next_size in the application's split model.
+}
+```
+
+Use a stable ID that is not derived from a translated label. When using an RTL layout, set the accessible value to the logical leading-pane size and use ResizeHandle::reversed(true) when that value grows opposite to physical divider movement.
 
 ## Toolbar overflow fitting
 
