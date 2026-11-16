@@ -40,7 +40,7 @@ The helper is intended for short UI strings, not as a replacement for a full tex
 
 ### Layout primitives
 
-The `layout` module contains stateless helpers for bounded two-pane geometry and toolbar overflow fitting. The caller owns the actual UI, resizer interaction, overflow menu, and persisted sizing. See [docs/layout.md](docs/layout.md) for examples and edge-case behavior.
+The `layout` module provides bounded two-pane geometry, an interactive splitter with pointer, keyboard, and AccessKit support, and toolbar overflow fitting. Applications still own pane state, commands, and overflow-menu contents. See [docs/layout.md](docs/layout.md) for examples and edge-case behavior.
 
 ## Quick start
 
