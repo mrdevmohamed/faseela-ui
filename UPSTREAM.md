@@ -26,6 +26,14 @@ This repository is not a fork and does not imply endorsement by the Craft/ArtCra
 - `crates/faseela-ui/src/direction.rs` is a Faseela-owned implementation of reading-direction primitives informed by Craft's `direction` module. It does not import `craft-i18n` or Craft's egui fork. Applications resolve a language preference and explicitly apply the resulting direction to their egui context.
 - `crates/faseela-ui/src/tabs.rs` now also includes a caller-painted accessible `Tab` interaction primitive. It intentionally omits Craft's dialog tab style and application-specific docking/drag policy.
 
+
+## Layout algorithms
+
+- `crates/faseela-ui/src/layout/geometry.rs` adapts the stateless split-rectangle geometry from Craft UI's `crates/ui/src/layout/geometry.rs`. The Faseela module retains the MIT OR Apache-2.0 attribution, but leaves drag gestures, persistence, pane ownership, and direction-to-pane mapping to the application.
+- `crates/faseela-ui/src/layout/toolbar.rs` adapts Craft UI's bounded toolbar fitting algorithm from `crates/ui/src/layout/toolbar.rs`. The caller owns the overflow control and must make every returned overflow index reachable; this library does not hide commands or build menus.
+- The port intentionally excludes the larger Craft docking model and window policy. Each algorithm has independent boundary and sizing tests and uses only the existing `egui` dependency.
+
+
 ## Arabic text rendering
 
 - `crates/faseela-ui/src/text.rs` is Faseela-owned display logic for mixed RTL/LTR visual ordering and mirroring of paired punctuation. It uses the `unicode-bidi`, `unicode-segmentation`, and `unicode-bidi-mirroring` crates. Arabic letter joining is done by egui's own shaper, not by this crate. Application strings must remain in logical Unicode order; call `text::display_text` only at the rendering boundary.
