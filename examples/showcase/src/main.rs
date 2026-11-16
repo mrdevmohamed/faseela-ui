@@ -75,6 +75,14 @@ impl eframe::App for Showcase {
         let available = ui.available_size();
         let is_mobile = available.x < 680.0;
         ui.set_min_size(available);
+        direction::apply(
+            ui.ctx(),
+            if self.rtl {
+                Direction::Rtl
+            } else {
+                Direction::Ltr
+            },
+        );
 
         if is_mobile {
             self.mobile_shell(ui, available);
@@ -88,9 +96,10 @@ impl Showcase {
     fn mobile_shell(&mut self, ui: &mut egui::Ui, available: egui::Vec2) {
         ui.vertical(|ui| {
             ui.set_min_size(available);
-            ui.horizontal(|ui| {
+            direction::horizontal(ui, |ui| {
                 ui.heading(egui::RichText::new("Faseela").size(25.0));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let trailing = direction::trailing(ui);
+                ui.with_layout(trailing, |ui| {
                     ui.label(
                         egui::RichText::new("LIVE PREVIEW")
                             .size(9.0)
@@ -118,7 +127,7 @@ impl Showcase {
             );
 
             ui.separator();
-            ui.horizontal(|ui| {
+            direction::horizontal(ui, |ui| {
                 for (index, label) in ["Home", "Appearance", "Settings"].iter().enumerate() {
                     let selected = self.selected_tab == index;
                     let fill = if selected {
@@ -147,10 +156,11 @@ impl Showcase {
     }
 
     fn desktop_shell(&mut self, ui: &mut egui::Ui, available: egui::Vec2) {
-        ui.horizontal(|ui| {
+        let shell_layout = direction::row(ui);
+        ui.with_layout(shell_layout, |ui| {
             ui.allocate_ui_with_layout(
                 egui::vec2(218.0, available.y),
-                egui::Layout::top_down(egui::Align::Min),
+                egui::Layout::top_down(direction::start_align(ui)),
                 |ui| {
                     egui::Frame::group(ui.style())
                         .fill(palette::BACKGROUND)
@@ -209,15 +219,16 @@ impl Showcase {
             ui.separator();
             ui.allocate_ui_with_layout(
                 egui::vec2((available.x - 232.0).max(260.0), available.y),
-                egui::Layout::top_down(egui::Align::Min),
+                egui::Layout::top_down(direction::start_align(ui)),
                 |ui| {
-                    ui.horizontal(|ui| {
+                    direction::horizontal(ui, |ui| {
                         ui.heading(match self.selected_tab {
                             0 => "Overview",
                             1 => "Appearance",
                             _ => "Preferences",
                         });
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let trailing = direction::trailing(ui);
+                        ui.with_layout(trailing, |ui| {
                             ui.label(
                                 egui::RichText::new("INTERACTIVE SHOWCASE")
                                     .small()
@@ -236,15 +247,6 @@ impl Showcase {
     }
 
     fn page_content(&mut self, ui: &mut egui::Ui, is_mobile: bool) {
-        direction::apply(
-            ui.ctx(),
-            if self.rtl {
-                Direction::Rtl
-            } else {
-                Direction::Ltr
-            },
-        );
-
         match self.selected_tab {
             0 => self.overview(ui, is_mobile),
             1 => self.appearance(ui, is_mobile),
