@@ -26,7 +26,7 @@ The showcase exercises the shared theme, icon button, tabs, selection control, a
 
 ### Arabic and mixed-direction text
 
-Faseela includes a display helper for Arabic joining forms and mixed RTL/LTR labels, plus a bundled DejaVu Sans fallback font. Keep source strings in their original logical Unicode order, then shape them only when rendering:
+Faseela includes a display helper for Arabic joining forms and mixed RTL/LTR labels, plus a bundled Noto Sans Arabic fallback (with DejaVu Sans as the broad final fallback). Keep source strings in their original logical Unicode order, then shape them only when rendering:
 
 ```rust
 faseela_ui::theme::install_arabic_font(&ctx);
