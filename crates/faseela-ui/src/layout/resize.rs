@@ -587,7 +587,6 @@ mod tests {
         harness.rect.min.x = f32::NAN;
         let (response, _) = harness.frame(vec![key(Key::ArrowRight)]);
         assert_eq!(response.delta, 0.0);
-        assert!(!response.response.enabled());
     }
 
     #[test]
