@@ -9,3 +9,8 @@ description = "Reusable Rust UI components and design foundations for Faseela ap
 
 [dependencies]
 egui.workspace = true
+arabic = "0.2.0"
+unicode-bidi = "0.3.18"
+unicode-bidi-mirroring = "0.4.0"
+unicode-segmentation = "1.12"
+dejavu = "2.37.0"
