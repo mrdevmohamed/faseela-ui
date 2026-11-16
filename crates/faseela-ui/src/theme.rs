@@ -25,12 +25,23 @@ pub fn install_arabic_font(ctx: &Context) {
     let mut fonts = FontDefinitions::default();
     let font_name = "faseela-arabic-fallback".to_owned();
 
+    // Prefer a purpose-built Arabic face before the broad Latin fallback.
+    let arabic_name = "faseela-noto-sans-arabic".to_owned();
+    fonts.font_data.insert(
+        arabic_name.clone(),
+        Arc::new(FontData::from_static(uzor_fonts::NOTO_SANS_ARABIC)),
+    );
     fonts.font_data.insert(
         font_name.clone(),
         Arc::new(FontData::from_static(dejavu::sans::regular())),
     );
 
     for family in [FontFamily::Proportional, FontFamily::Monospace] {
+        fonts
+            .families
+            .entry(family)
+            .or_default()
+            .push(arabic_name.clone());
         fonts
             .families
             .entry(family)
