@@ -254,7 +254,11 @@ impl<'a> Tab<'a> {
         let response = ui.interact(
             safe_rect,
             self.id,
-            if valid { self.sense } else { egui::Sense::hover() },
+            if valid {
+                self.sense
+            } else {
+                egui::Sense::hover()
+            },
         );
         response.widget_info(|| {
             egui::WidgetInfo::selected(
@@ -279,12 +283,8 @@ impl<'a> Tab<'a> {
                     stroke.width.min(focus.width().min(focus.height()) * 0.5),
                     stroke.color,
                 );
-                ui.painter().rect_stroke(
-                    focus,
-                    0.0,
-                    stroke,
-                    egui::StrokeKind::Inside,
-                );
+                ui.painter()
+                    .rect_stroke(focus, 0.0, stroke, egui::StrokeKind::Inside);
             }
         }
 
