@@ -14,3 +14,4 @@ unicode-bidi = "0.3.18"
 unicode-bidi-mirroring = "0.4.0"
 unicode-segmentation = "1.12"
 dejavu = "2.37.0"
+uzor-fonts = { version = "1.5.18", default-features = false }
