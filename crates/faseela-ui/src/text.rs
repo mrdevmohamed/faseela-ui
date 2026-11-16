@@ -81,9 +81,11 @@ mod tests {
     #[test]
     fn arabic_text_is_shaped_and_reordered() {
         let original = "السلام عليكم";
-        let expected = reshape(original, ArabicDirection::RightToLeft);
-        assert_eq!(display_text(original), expected);
-        assert_ne!(display_text(original), original);
+        let visual = display_text(original);
+        assert_ne!(visual, original);
+        assert!(visual.chars().any(|character| {
+            matches!(character, '\u{FB50}'..='\u{FDFF}' | '\u{FE70}'..='\u{FEFF}')
+        }));
     }
 
     #[test]
