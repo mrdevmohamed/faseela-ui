@@ -1,0 +1,11 @@
+[package]
+name = "faseela-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Reusable Rust UI components and design foundations for Faseela applications."
+
+[dependencies]
+egui.workspace = true
