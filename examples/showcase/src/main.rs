@@ -117,7 +117,7 @@ impl Showcase {
             ui.label(
                 egui::RichText::new("Your workspace, running in WebAssembly")
                     .size(12.0)
-                    .color(palette::PRIMARY_LIGHT),
+                    .color(ui.visuals().hyperlink_color),
             );
             ui.add_space(10.0);
 
@@ -142,7 +142,7 @@ impl Showcase {
                     let fill = if selected {
                         palette::PRIMARY
                     } else {
-                        palette::BACKGROUND
+                        ui.visuals().widgets.inactive.bg_fill
                     };
                     let response = ui.add_sized(
                         egui::vec2(button_width, 48.0),
@@ -150,7 +150,7 @@ impl Showcase {
                             if selected {
                                 palette::SURFACE
                             } else {
-                                palette::PRIMARY_LIGHT
+                                ui.visuals().hyperlink_color
                             },
                         ))
                         .fill(fill)
@@ -181,7 +181,7 @@ impl Showcase {
                             ui.label(
                                 egui::RichText::new("UI WORKSPACE")
                                     .small()
-                                    .color(palette::PRIMARY_LIGHT),
+                                    .color(ui.visuals().hyperlink_color),
                             );
                             ui.add_space(28.0);
                             for (index, label) in
@@ -194,13 +194,13 @@ impl Showcase {
                                         if selected {
                                             palette::SURFACE
                                         } else {
-                                            palette::PRIMARY_LIGHT
+                                            ui.visuals().hyperlink_color
                                         },
                                     ))
                                     .fill(if selected {
                                         palette::PRIMARY
                                     } else {
-                                        palette::BACKGROUND
+                                        ui.visuals().widgets.inactive.bg_fill
                                     })
                                     .stroke(egui::Stroke::NONE),
                                 );
@@ -218,7 +218,7 @@ impl Showcase {
                                 ui.label(
                                     egui::RichText::new("Faseela UI 0.1")
                                         .small()
-                                        .color(palette::PRIMARY_LIGHT),
+                                        .color(ui.visuals().hyperlink_color),
                                 );
                             });
                         });
@@ -242,7 +242,7 @@ impl Showcase {
                                 egui::RichText::new("INTERACTIVE SHOWCASE")
                                     .small()
                                     .strong()
-                                    .color(palette::PRIMARY_LIGHT),
+                                    .color(ui.visuals().hyperlink_color),
                             );
                         });
                     });
@@ -268,7 +268,7 @@ impl Showcase {
             ui.label(
                 egui::RichText::new("Faseela UI")
                     .strong()
-                    .color(palette::PRIMARY_LIGHT),
+                    .color(ui.visuals().hyperlink_color),
             );
             ui.label(
                 egui::RichText::new("A real Rust application · compiled to WebAssembly")
@@ -288,7 +288,7 @@ impl Showcase {
                 egui::RichText::new("WELCOME BACK")
                     .small()
                     .strong()
-                    .color(palette::PRIMARY_LIGHT),
+                    .color(ui.visuals().hyperlink_color),
             );
             ui.add_space(6.0);
             ui.heading(if is_mobile {
@@ -303,7 +303,7 @@ impl Showcase {
                     egui::RichText::new(text::display_text(
                         "مرحبًا بك في واجهة فسيلة. الحروف العربية متصلة الآن.",
                     ))
-                    .color(palette::PRIMARY_LIGHT),
+                    .color(ui.visuals().hyperlink_color),
                 );
             });
             ui.add_space(14.0);
@@ -346,7 +346,7 @@ impl Showcase {
                         "Left to right"
                     })
                     .strong()
-                    .color(palette::PRIMARY_LIGHT),
+                    .color(ui.visuals().hyperlink_color),
                 );
             });
         });
@@ -429,7 +429,7 @@ impl Showcase {
             if is_mobile {
                 ui.add_space(8.0);
                 ui.label(
-                    egui::RichText::new("Mobile layout is active").color(palette::PRIMARY_LIGHT),
+                    egui::RichText::new("Mobile layout is active").color(ui.visuals().hyperlink_color),
                 );
             }
         });
@@ -442,7 +442,7 @@ impl Showcase {
             ui.label(
                 egui::RichText::new(title)
                     .small()
-                    .color(palette::PRIMARY_LIGHT),
+                    .color(ui.visuals().hyperlink_color),
             );
             ui.heading(egui::RichText::new(value).size(24.0));
             ui.label(
@@ -463,13 +463,13 @@ impl Showcase {
             hovered: ButtonVisuals {
                 fill: palette::PRIMARY_LIGHT,
                 stroke: egui::Stroke::NONE,
-                icon: palette::BACKGROUND,
+                icon: ui.visuals().widgets.inactive.bg_fill,
             },
             pressed: None,
             selected: ButtonVisuals {
                 fill: palette::ACCENT,
                 stroke: egui::Stroke::NONE,
-                icon: palette::BACKGROUND,
+                icon: ui.visuals().widgets.inactive.bg_fill,
             },
             corner_radius: egui::CornerRadius::same(9),
             focus_stroke: egui::Stroke::new(1.0, palette::ACCENT),
