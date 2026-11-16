@@ -5,6 +5,7 @@
 
 pub mod buttons;
 pub mod icons;
+pub mod tabs;
 pub mod theme;
 
 pub use egui;
