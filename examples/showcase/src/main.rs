@@ -59,7 +59,7 @@ impl eframe::App for Showcase {
             for (index, label) in ["General", "Appearance", "Keyboard"].iter().enumerate() {
                 let (rect, _) =
                     ui.allocate_exact_size(egui::vec2(112.0, 34.0), egui::Sense::hover());
-                let _response = Tab::new(egui::Id::new(("showcase-tab", index)), label, index == 0)
+                let _response = Tab::new(egui::Id::unique(("showcase-tab", index)), label, index == 0)
                     .show_at(ui, rect, |ui, response| {
                         let fill = if index == 0 {
                             palette::PRIMARY
