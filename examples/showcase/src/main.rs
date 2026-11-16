@@ -80,6 +80,11 @@ impl eframe::App for Showcase {
             ui.ctx().request_repaint();
         }
 
+        // eframe's WebAssembly canvas is transparent. Paint the active egui panel color
+        // explicitly so the browser's default canvas color never leaks through the UI.
+        ui.painter()
+            .rect_filled(ui.max_rect(), 0.0, ui.visuals().panel_fill);
+
         let available = ui.available_size();
         let is_mobile = available.x < 680.0;
         ui.set_min_size(available);
@@ -239,15 +244,25 @@ impl Showcase {
                             1 => "Appearance",
                             _ => "Preferences",
                         });
-                        let trailing = direction::trailing(ui);
-                        ui.with_layout(trailing, |ui| {
-                            ui.label(
+                        // The label owns the remaining width. Right-align its text inside that
+                        // rectangle instead of placing an LTR text run at an RTL layout edge.
+                        let caption_width = ui.available_width().max(0.0);
+                        let caption_align = if self.rtl {
+                            egui::Align::LEFT
+                        } else {
+                            egui::Align::RIGHT
+                        };
+                        ui.add_sized(
+                            egui::vec2(caption_width, ui.spacing().interact_size.y),
+                            egui::Label::new(
                                 egui::RichText::new("INTERACTIVE SHOWCASE")
                                     .small()
                                     .strong()
                                     .color(ui.visuals().hyperlink_color),
-                            );
-                        });
+                            )
+                            .halign(caption_align)
+                            .truncate(),
+                        );
                     });
                     ui.separator();
                     egui::ScrollArea::vertical()
@@ -301,14 +316,20 @@ impl Showcase {
             });
             ui.label("Explore shared components running as a real interactive application.");
             ui.add_space(10.0);
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-                ui.label(
-                    egui::RichText::new(text::display_text(
-                        "مرحبًا بك في واجهة فسيلة. الحروف العربية متصلة الآن.",
-                    ))
-                    .color(ui.visuals().hyperlink_color),
-                );
-            });
+            // display_text has already put short RTL labels in visual word order.
+            // Keep the widget in a normal LTR allocation and align its text inside a full-width
+            // rectangle; anchoring the widget itself at the right edge makes the text overflow.
+            let arabic_line = text::display_text(
+                "مرحبًا بك في واجهة فسيلة. الحروف العربية متصلة الآن.",
+            );
+            ui.add_sized(
+                egui::vec2(ui.available_width().max(0.0), ui.spacing().interact_size.y),
+                egui::Label::new(
+                    egui::RichText::new(arabic_line).color(ui.visuals().hyperlink_color),
+                )
+                .halign(egui::Align::RIGHT)
+                .truncate(),
+            );
             ui.add_space(14.0);
             ui.horizontal_wrapped(|ui| {
                 self.stat_card(ui, "Components", "04", "Ready to use");
