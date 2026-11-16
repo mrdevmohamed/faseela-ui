@@ -6,7 +6,7 @@
 
 use egui::{Align, Context, Id, Key, Layout, Rect, Ui, Vec2};
 
-const DIRECTION_ID: Id = Id::new("faseela_ui::direction");
+fn direction_id() -> Id {\n    Id::new("faseela_ui::direction")\n}
 
 /// Reading direction of the application chrome and directional controls.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
@@ -69,7 +69,7 @@ pub fn language_direction(language_tag: &str) -> Direction {
 /// Store the interface direction on the context. Call after replacing the application's egui
 /// style as the direction is independent from theme selection.
 pub fn apply(ctx: &Context, direction: Direction) {
-    ctx.data_mut(|data| data.insert_temp(DIRECTION_ID, direction));
+    ctx.data_mut(|data| data.insert_temp(direction_id(), direction));
 }
 
 /// Anything that can provide the current interface direction.
@@ -85,7 +85,7 @@ impl HasDirection for Direction {
 
 impl HasDirection for Context {
     fn direction(&self) -> Direction {
-        self.data(|data| data.get_temp(DIRECTION_ID))
+        self.data(|data| data.get_temp(direction_id()))
             .unwrap_or_default()
     }
 }
