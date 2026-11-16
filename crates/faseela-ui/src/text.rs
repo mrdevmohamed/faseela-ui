@@ -87,6 +87,13 @@ fn display_line(logical_line: &str) -> String {
 
     let visual_order = BidiInfo::reorder_visual(&word_levels);
 
+    if logical_line == "العربية Faseela 123" {
+        eprintln!(
+            "DEBUG words={words:?} levels={word_levels:?} visual_order={visual_order:?} bidi_levels={:?}",
+            bidi.levels
+        );
+    }
+
     let mut output = String::with_capacity(logical_line.len());
     for visual_index in visual_order {
         output.push_str(words[visual_index].1);
