@@ -192,6 +192,106 @@ fn squeeze(natural: &[f32], indices: &[usize], total: f32, minimum: f32) -> Vec<
         .collect()
 }
 
+
+/// An accessible tab interaction primitive with caller-owned painting and selection state.
+///
+/// IDs must be unique within the parent UI scope and must not depend on translated labels.
+/// This widget does not allocate space: pass the rectangle assigned by the tab-strip layout.
+/// Use `Sense::drag()` when the parent implements reorder or tear-off behavior.
+pub struct Tab<'a> {
+    id: egui::Id,
+    label: &'a str,
+    selected: bool,
+    sense: egui::Sense,
+    focus_stroke: Option<egui::Stroke>,
+}
+
+impl<'a> Tab<'a> {
+    pub fn new(id: egui::Id, label: &'a str, selected: bool) -> Self {
+        Self {
+            id,
+            label,
+            selected,
+            sense: egui::Sense::click(),
+            focus_stroke: None,
+        }
+    }
+
+    /// Override the default click interaction, for example with `Sense::drag()`.
+    pub fn sense(mut self, sense: egui::Sense) -> Self {
+        self.sense = sense;
+        self
+    }
+
+    /// Set the inset keyboard-focus outline. By default egui's selection stroke is used.
+    /// Passing `Stroke::NONE` disables the outline.
+    pub fn focus_stroke(mut self, stroke: egui::Stroke) -> Self {
+        self.focus_stroke = Some(stroke);
+        self
+    }
+
+    /// Register the tab in the UI and invoke the caller's painter.
+    ///
+    /// Invalid, empty, inverted, non-finite, or excessively large rectangles produce an inert
+    /// response and do not invoke the painter.
+    pub fn show_at(
+        self,
+        ui: &mut egui::Ui,
+        rect: egui::Rect,
+        paint: impl FnOnce(&egui::Ui, &egui::Response),
+    ) -> egui::Response {
+        let size = rect.size();
+        let valid = rect.is_finite()
+            && size.x > 0.0
+            && size.y > 0.0
+            && size.x <= 1_000_000.0
+            && size.y <= 1_000_000.0;
+        let safe_rect = if valid {
+            rect
+        } else {
+            egui::Rect::from_min_size(egui::Pos2::ZERO, egui::Vec2::ZERO)
+        };
+        let response = ui.interact(
+            safe_rect,
+            self.id,
+            if valid { self.sense } else { egui::Sense::hover() },
+        );
+        response.widget_info(|| {
+            egui::WidgetInfo::selected(
+                egui::Role::Button,
+                valid && ui.is_enabled(),
+                self.selected,
+                self.label,
+            )
+        });
+
+        if !valid {
+            return response;
+        }
+
+        paint(ui, &response);
+
+        if response.has_focus() && rect.width() > 4.0 && rect.height() > 4.0 {
+            let focus = rect.shrink(2.0);
+            let stroke = self.focus_stroke.unwrap_or(ui.visuals().selection.stroke);
+            if stroke.width.is_finite() && stroke.width > 0.0 {
+                let stroke = egui::Stroke::new(
+                    stroke.width.min(focus.width().min(focus.height()) * 0.5),
+                    stroke.color,
+                );
+                ui.painter().rect_stroke(
+                    focus,
+                    0.0,
+                    stroke,
+                    egui::StrokeKind::Inside,
+                );
+            }
+        }
+
+        response
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
