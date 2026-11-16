@@ -13,6 +13,17 @@ This repository is the clean Faseela-owned foundation. The Craft UI extraction i
 - `crates/faseela-ui`: shared widgets and design foundations, including buttons, icons, tabs, RTL helpers, and theme tokens.
 - `examples/showcase`: executable preview app.
 
+## Live showcase
+
+The interactive Rust/egui showcase is compiled to WebAssembly and published with GitHub Pages:
+
+- https://mrdevmohamed.github.io/faseela-ui/
+- Source entry point: `examples/showcase/src/main.rs`
+- Browser page: `examples/showcase/index.html`
+- Build locally: install the `wasm32-unknown-unknown` target and Trunk, then run `cd examples/showcase && trunk serve`.
+
+The showcase exercises the shared theme, icon button, tabs, selection control, and LTR/RTL direction switch. It uses the same Rust widgets as the native showcase.
+
 ## Quick start
 
 ```toml
