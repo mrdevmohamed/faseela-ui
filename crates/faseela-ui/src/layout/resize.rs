@@ -374,16 +374,16 @@ mod tests {
                 |ui| {
                     result = Some(
                         ui.add_enabled_ui(enabled, |ui| {
-                                ResizeHandle::new(
-                                    Id::unique("test-divider"),
-                                    axis,
-                                    rect,
-                                    "Resize panels",
-                                    style(),
-                                )
-                                .value(value, 0.0..=300.0)
-                                .reversed(reversed)
-                                .show(ui)
+                            ResizeHandle::new(
+                                Id::unique("test-divider"),
+                                axis,
+                                rect,
+                                "Resize panels",
+                                style(),
+                            )
+                            .value(value, 0.0..=300.0)
+                            .reversed(reversed)
+                            .show(ui)
                         })
                         .inner,
                     );
@@ -594,15 +594,10 @@ mod tests {
                 ..Default::default()
             },
             |ui| {
-                let response = ResizeHandle::new(
-                    id,
-                    SplitAxis::Horizontal,
-                    rect,
-                    "Invalid divider",
-                    style(),
-                )
-                .value(400.0, 0.0..=300.0)
-                .show(ui);
+                let response =
+                    ResizeHandle::new(id, SplitAxis::Horizontal, rect, "Invalid divider", style())
+                        .value(400.0, 0.0..=300.0)
+                        .show(ui);
                 delta = Some(response.delta);
             },
         );
