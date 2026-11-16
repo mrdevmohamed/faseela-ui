@@ -65,34 +65,16 @@ fn display_line(logical_line: &str) -> String {
         })
         .collect();
 
-    // A whitespace-only segment between two words with the same direction belongs to that
-    // directional run. Keep it at the paragraph level only when the surrounding directions
-    // differ, matching the visual ordering of spaces between mixed-direction words.
-    for index in 0..words.len() {
-        if words[index].1.chars().all(char::is_whitespace) {
-            let previous = (0..index)
-                .rev()
-                .find(|&candidate| !words[candidate].1.chars().all(char::is_whitespace))
-                .map(|candidate| word_levels[candidate]);
-            let next = (index + 1..words.len())
-                .find(|&candidate| !words[candidate].1.chars().all(char::is_whitespace))
-                .map(|candidate| word_levels[candidate]);
-
-            word_levels[index] = match (previous, next) {
-                (Some(previous), Some(next)) if previous == next => previous,
-                _ => paragraph_level,
-            };
+    // Treat whitespace-only tokens as paragraph separators instead of joining adjacent
+    // Latin words and European numbers into a single run. This keeps numeric segments in
+    // the visual order expected by egui while leaving every token's characters untouched.
+    for (index, (_, word)) in words.iter().enumerate() {
+        if word.chars().all(char::is_whitespace) {
+            word_levels[index] = paragraph_level;
         }
     }
 
     let visual_order = BidiInfo::reorder_visual(&word_levels);
-
-    if logical_line == "العربية Faseela 123" {
-        eprintln!(
-            "DEBUG words={words:?} levels={word_levels:?} visual_order={visual_order:?} bidi_levels={:?}",
-            bidi.levels
-        );
-    }
 
     let mut output = String::with_capacity(logical_line.len());
     for visual_index in visual_order {
