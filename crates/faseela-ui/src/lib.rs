@@ -3,6 +3,7 @@
 //! Application-specific state and business logic should remain outside this crate.
 //! Widgets expose focused APIs and use egui primitives so applications can compose them.
 
+pub mod buttons;
 pub mod theme;
 
 pub use egui;
