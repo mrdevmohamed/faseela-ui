@@ -7,7 +7,9 @@
 //! `storytold/craft-libs` project. See the attribution notes in the repository's `UPSTREAM.md`.
 
 mod geometry;
+mod resize;
 mod toolbar;
 
 pub use geometry::{SplitAxis, SplitLayout, SplitSize, split_rect};
+pub use resize::{ResizeHandle, ResizeHandleStyle, ResizeResponse};
 pub use toolbar::{ToolbarFit, fit_toolbar};
