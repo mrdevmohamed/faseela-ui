@@ -1,16 +1,17 @@
 //! Display helpers for bidirectional text in egui.
 //!
-//! Keep strings in logical Unicode order. This helper reorders directional runs only;
-//! egui's text shaper must receive the characters inside each run in logical order.
+//! Keep strings in logical Unicode order. This helper reorders word-boundary units only;
+//! egui's HarfRust shaper must receive Arabic letters inside each word in logical order.
 
 use unicode_bidi::{BidiClass, BidiInfo, Level, bidi_class};
 use unicode_segmentation::UnicodeSegmentation;
 
-/// Reorder bidirectional runs for egui while preserving the logical order inside each run.
+/// Reorder bidirectional words for egui while preserving the letters inside each word.
 ///
-/// egui shapes Arabic runs itself. Reversing Arabic characters or converting them to
-/// presentation forms here would double-process the run and can make letters appear reversed
-/// or disconnected. This helper only moves complete directional runs into visual order.
+/// egui shapes Arabic words itself, but does not yet reorder words in a bidirectional
+/// paragraph. Reversing individual Arabic characters or converting them to presentation
+/// forms here would double-process shaping and can make letters appear reversed or disconnected.
+/// This helper is a display-only workaround for short labels; do not use it for editable text.
 pub fn display_text(logical_text: &str) -> String {
     let mut visual_text = String::with_capacity(logical_text.len());
 
@@ -47,30 +48,26 @@ fn display_line(logical_line: &str) -> String {
             _ => None,
         });
     let bidi = BidiInfo::new(logical_line, base_level);
-    let clusters: Vec<(usize, &str)> = logical_line.grapheme_indices(true).collect();
 
-    // Build directional runs from grapheme clusters. Keep every run's source text intact:
-    // the renderer performs Arabic shaping and glyph ordering inside RTL runs.
-    let mut runs: Vec<(usize, usize, Level)> = Vec::new();
-    for (byte_index, cluster) in clusters {
-        let end = byte_index + cluster.len();
-        let level = bidi.levels[byte_index];
-        if let Some((_, run_end, run_level)) = runs.last_mut()
-            && *run_level == level
-        {
-            *run_end = end;
-        } else {
-            runs.push((byte_index, end, level));
-        }
-    }
-
-    let run_levels: Vec<Level> = runs.iter().map(|(_, _, level)| *level).collect();
-    let visual_order = BidiInfo::reorder_visual(&run_levels);
+    // egui shapes each Arabic word right-to-left, but lays words out in logical order.
+    // Reorder word-boundary units while leaving every word's characters untouched.
+    let words: Vec<(usize, &str)> = logical_line.split_word_bound_indices().collect();
+    let word_levels: Vec<Level> = words
+        .iter()
+        .map(|(byte_index, word)| {
+            let level_index = byte_index
+                + word
+                    .char_indices()
+                    .find(|(_, character)| !character.is_whitespace())
+                    .map_or(0, |(index, _)| index);
+            bidi.levels[level_index]
+        })
+        .collect();
+    let visual_order = BidiInfo::reorder_visual(&word_levels);
 
     let mut output = String::with_capacity(logical_line.len());
     for visual_index in visual_order {
-        let (start, end, _) = runs[visual_index];
-        output.push_str(&logical_line[start..end]);
+        output.push_str(words[visual_index].1);
     }
 
     output
@@ -87,17 +84,15 @@ mod tests {
     }
 
     #[test]
-    fn arabic_run_stays_in_logical_order_for_egui_shaping() {
-        let original = "السلام عليكم";
-        assert_eq!(display_text(original), original);
+    fn arabic_words_reorder_but_letters_stay_logical_for_egui_shaping() {
+        assert_eq!(display_text("السلام عليكم"), "عليكم السلام");
     }
 
     #[test]
-    fn mixed_arabic_and_latin_reorders_runs_without_reversing_arabic() {
-        let original = "مرحبًا بكم في Faseela UI 1.0";
-        let visual = display_text(original);
+    fn mixed_arabic_and_latin_reorders_words_without_reversing_letters() {
+        let visual = display_text("مرحبًا بكم في Faseela UI 1.0");
         assert!(visual.starts_with("Faseela"), "{visual:?}");
-        assert!(visual.contains("مرحبًا بكم في"), "{visual:?}");
+        assert!(visual.contains("في بكم مرحبًا"), "{visual:?}");
         assert!(visual.contains("UI 1.0"), "{visual:?}");
     }
 
@@ -105,11 +100,8 @@ mod tests {
     fn paragraph_base_direction_comes_from_first_strong_character() {
         let arabic_first = display_text("العربية Faseela 123");
         let latin_first = display_text("Faseela العربية 123");
-        assert!(arabic_first.starts_with("Faseela"), "{arabic_first:?}");
-        assert!(latin_first.starts_with("Faseela"), "{latin_first:?}");
-        assert!(arabic_first.contains("العربية"), "{arabic_first:?}");
-        assert!(latin_first.contains("123"), "{latin_first:?}");
-        assert_ne!(arabic_first, latin_first);
+        assert_eq!(arabic_first, "123 Faseela العربية");
+        assert_eq!(latin_first, "Faseela العربية 123");
     }
 
     #[test]
