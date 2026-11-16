@@ -60,6 +60,6 @@ impl eframe::App for Showcase {
             );
         if response.clicked() {
             ui.label("Icon button activated");
-            }
+        }
     }
 }
