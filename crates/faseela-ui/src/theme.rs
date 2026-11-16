@@ -47,6 +47,16 @@ impl ThemePreset {
             _ => Self::FaseelaDark,
         }
     }
+
+    /// Secondary text color with sufficient contrast for this preset.
+    pub const fn muted_text(self) -> Color32 {
+        match self {
+            Self::FaseelaDark => Color32::from_rgb(0xA9, 0xC1, 0xB7),
+            Self::Midnight => Color32::from_rgb(0xA9, 0xB2, 0xD0),
+            Self::Forest => Color32::from_rgb(0xAF, 0xC8, 0xB7),
+            Self::Light => Color32::from_rgb(0x62, 0x73, 0x6A),
+        }
+    }
 }
 
 /// Install bundled Arabic and broad-Unicode fallback fonts for UI text.
@@ -123,6 +133,33 @@ pub fn apply_preset(ctx: &Context, preset: ThemePreset) {
         ),
     };
 
+    let (text_color, border_color, hover_color) = match preset {
+        ThemePreset::FaseelaDark => (
+            Color32::from_rgb(0xE8, 0xF7, 0xEE),
+            Color32::from_rgb(0x2D, 0x51, 0x45),
+            Color32::from_rgb(0x20, 0x46, 0x3A),
+        ),
+        ThemePreset::Midnight => (
+            Color32::from_rgb(0xEA, 0xED, 0xFF),
+            Color32::from_rgb(0x3A, 0x45, 0x67),
+            Color32::from_rgb(0x31, 0x3C, 0x5A),
+        ),
+        ThemePreset::Forest => (
+            Color32::from_rgb(0xE6, 0xF2, 0xE9),
+            Color32::from_rgb(0x35, 0x5A, 0x43),
+            Color32::from_rgb(0x2D, 0x50, 0x39),
+        ),
+        ThemePreset::Light => (
+            Color32::from_rgb(0x1D, 0x2B, 0x23),
+            Color32::from_rgb(0xD6, 0xE1, 0xD9),
+            Color32::from_rgb(0xDF, 0xEB, 0xE3),
+        ),
+    };
+    let text_stroke = Stroke::new(1.0, text_color);
+    let border_stroke = Stroke::new(1.0, border_color);
+    let hover_stroke = Stroke::new(1.0, primary);
+    let on_primary_stroke = Stroke::new(1.0, Color32::WHITE);
+
     visuals.panel_fill = background;
     visuals.window_fill = panel;
     visuals.extreme_bg_color = if preset == ThemePreset::Light {
@@ -136,14 +173,21 @@ pub fn apply_preset(ctx: &Context, preset: ThemePreset) {
     visuals.hyperlink_color = text_accent;
     visuals.warn_fg_color = accent;
     visuals.widgets.noninteractive.bg_fill = panel;
+    visuals.widgets.noninteractive.bg_stroke = border_stroke;
+    visuals.widgets.noninteractive.fg_stroke = text_stroke;
     visuals.widgets.inactive.bg_fill = surface;
-    visuals.widgets.hovered.bg_fill = surface.gamma_multiply(if preset == ThemePreset::Light {
-        0.94
-    } else {
-        1.2
-    });
+    visuals.widgets.inactive.bg_stroke = border_stroke;
+    visuals.widgets.inactive.fg_stroke = text_stroke;
+    visuals.widgets.hovered.bg_fill = hover_color;
+    visuals.widgets.hovered.bg_stroke = hover_stroke;
+    visuals.widgets.hovered.fg_stroke = text_stroke;
     visuals.widgets.active.bg_fill = primary;
+    visuals.widgets.active.bg_stroke = hover_stroke;
+    visuals.widgets.active.fg_stroke = on_primary_stroke;
     visuals.widgets.open.bg_fill = surface;
+    visuals.widgets.open.bg_stroke = hover_stroke;
+    visuals.widgets.open.fg_stroke = text_stroke;
+    visuals.window_stroke = border_stroke;
     visuals.window_corner_radius = CornerRadius::same(10);
     visuals.menu_corner_radius = CornerRadius::same(8);
 
@@ -180,6 +224,7 @@ mod tests {
         let visuals = ctx.style_of(Theme::Dark).visuals.clone();
         assert_eq!(visuals.panel_fill, palette::BACKGROUND);
         assert_eq!(visuals.selection.bg_fill, palette::PRIMARY);
+        assert_eq!(visuals.widgets.active.fg_stroke.color, Color32::WHITE);
     }
 
     #[test]
@@ -189,6 +234,35 @@ mod tests {
         let visuals = ctx.style_of(Theme::Light).visuals.clone();
         assert_eq!(visuals.panel_fill, Color32::from_rgb(0xF4, 0xF7, 0xF5));
         assert_eq!(visuals.widgets.noninteractive.bg_fill, Color32::WHITE);
+        assert_eq!(
+            visuals.widgets.inactive.fg_stroke.color,
+            Color32::from_rgb(0x1D, 0x2B, 0x23)
+        );
+    }
+
+    #[test]
+    fn every_preset_sets_widget_foregrounds_and_borders() {
+        let ctx = Context::default();
+
+        for preset in ThemePreset::ALL {
+            apply_preset(&ctx, preset);
+            let egui_theme = if preset == ThemePreset::Light {
+                Theme::Light
+            } else {
+                Theme::Dark
+            };
+            let visuals = ctx.style_of(egui_theme).visuals.clone();
+            let expected_text = match preset {
+                ThemePreset::FaseelaDark => Color32::from_rgb(0xE8, 0xF7, 0xEE),
+                ThemePreset::Midnight => Color32::from_rgb(0xEA, 0xED, 0xFF),
+                ThemePreset::Forest => Color32::from_rgb(0xE6, 0xF2, 0xE9),
+                ThemePreset::Light => Color32::from_rgb(0x1D, 0x2B, 0x23),
+            };
+
+            assert_eq!(visuals.widgets.inactive.fg_stroke.color, expected_text);
+            assert_eq!(visuals.widgets.active.fg_stroke.color, Color32::WHITE);
+            assert!(visuals.window_stroke.width > 0.0);
+        }
     }
 
     #[test]

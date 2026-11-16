@@ -3,7 +3,7 @@ use faseela_ui::{
     buttons::{ButtonVisuals, IconButton, IconButtonStyle},
     direction::{self, Direction},
     text,
-    theme::{self, palette},
+    theme::{self, palette, ThemePreset},
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -64,18 +64,19 @@ mod web {
 struct Showcase {
     rtl: bool,
     selected_tab: usize,
-    selected_theme: usize,
+    selected_theme: ThemePreset,
     icon_activated: bool,
     notifications: bool,
     compact_mode: bool,
-    applied_theme: usize,
+    applied_theme: Option<ThemePreset>,
 }
 
 impl eframe::App for Showcase {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        if self.applied_theme != self.selected_theme {
-            theme::apply_preset(ui.ctx(), theme::ThemePreset::from_index(self.selected_theme));
-            self.applied_theme = self.selected_theme;
+        if self.applied_theme != Some(self.selected_theme) {
+            theme::apply_preset(ui.ctx(), self.selected_theme);
+            self.applied_theme = Some(self.selected_theme);
+            ui.ctx().request_repaint();
         }
 
         let available = ui.available_size();
@@ -140,19 +141,20 @@ impl Showcase {
                 for (index, label) in ["Home", "Appearance", "Settings"].iter().enumerate() {
                     let selected = self.selected_tab == index;
                     let fill = if selected {
-                        palette::PRIMARY
+                        ui.visuals().selection.bg_fill
                     } else {
                         ui.visuals().widgets.inactive.bg_fill
                     };
+                    let foreground = if selected {
+                        ui.visuals().widgets.active.fg_stroke.color
+                    } else {
+                        ui.visuals().widgets.inactive.fg_stroke.color
+                    };
                     let response = ui.add_sized(
                         egui::vec2(button_width, 48.0),
-                        egui::Button::new(egui::RichText::new(*label).size(11.0).color(
-                            if selected {
-                                palette::SURFACE
-                            } else {
-                                ui.visuals().hyperlink_color
-                            },
-                        ))
+                        egui::Button::new(
+                            egui::RichText::new(*label).size(11.0).color(foreground),
+                        )
                         .fill(fill)
                         .stroke(egui::Stroke::NONE),
                     );
@@ -172,7 +174,7 @@ impl Showcase {
                 egui::Layout::top_down(direction::start_align(ui)),
                 |ui| {
                     egui::Frame::group(ui.style())
-                        .fill(ui.visuals().panel_fill)
+                        .fill(ui.visuals().widgets.noninteractive.bg_fill)
                         .show(ui, |ui| {
                             ui.set_min_width(190.0);
                             ui.set_min_height(available.y - 12.0);
@@ -188,20 +190,22 @@ impl Showcase {
                                 ["Overview", "Appearance", "Preferences"].iter().enumerate()
                             {
                                 let selected = self.selected_tab == index;
+                                let foreground = if selected {
+                                    ui.visuals().widgets.active.fg_stroke.color
+                                } else {
+                                    ui.visuals().widgets.inactive.fg_stroke.color
+                                };
+                                let fill = if selected {
+                                    ui.visuals().selection.bg_fill
+                                } else {
+                                    ui.visuals().widgets.inactive.bg_fill
+                                };
                                 let response = ui.add_sized(
                                     egui::vec2(ui.available_width(), 44.0),
-                                    egui::Button::new(egui::RichText::new(*label).color(
-                                        if selected {
-                                            palette::SURFACE
-                                        } else {
-                                            ui.visuals().hyperlink_color
-                                        },
-                                    ))
-                                    .fill(if selected {
-                                        palette::PRIMARY
-                                    } else {
-                                        ui.visuals().widgets.inactive.bg_fill
-                                    })
+                                    egui::Button::new(
+                                        egui::RichText::new(*label).color(foreground),
+                                    )
+                                    .fill(fill)
                                     .stroke(egui::Stroke::NONE),
                                 );
                                 if response.clicked() {
@@ -213,7 +217,7 @@ impl Showcase {
                                 ui.label(
                                     egui::RichText::new("Rust · egui · WebAssembly")
                                         .small()
-                                        .color(egui::Color32::GRAY),
+                                        .color(self.selected_theme.muted_text()),
                                 );
                                 ui.label(
                                     egui::RichText::new("Faseela UI 0.1")
@@ -273,7 +277,7 @@ impl Showcase {
             ui.label(
                 egui::RichText::new("A real Rust application · compiled to WebAssembly")
                     .small()
-                    .color(egui::Color32::GRAY),
+                    .color(self.selected_theme.muted_text()),
             );
         });
         ui.add_space(20.0);
@@ -357,7 +361,7 @@ impl Showcase {
             ui.heading("Quick action");
             ui.label("A reusable icon button with hover, selected and focus states.");
             ui.add_space(8.0);
-            let style = self.button_style();
+            let style = Self::button_style(ui.visuals());
             let response = IconButton::new("Toggle sample action", egui::vec2(46.0, 46.0), &style)
                 .selected(self.icon_activated)
                 .show(ui, |ui, rect, tint| {
@@ -382,25 +386,29 @@ impl Showcase {
             ui.add_space(12.0);
             egui::ComboBox::from_label("Color theme")
                 .width(ui.available_width().min(320.0))
-                .selected_text(theme::ThemePreset::from_index(self.selected_theme).label())
+                .selected_text(self.selected_theme.label())
                 .show_ui(ui, |ui| {
-                    for (index, preset) in theme::ThemePreset::ALL.iter().enumerate() {
-                        ui.selectable_value(&mut self.selected_theme, index, preset.label());
+                    for preset in ThemePreset::ALL {
+                        ui.selectable_value(
+                            &mut self.selected_theme,
+                            preset,
+                            preset.label(),
+                        );
                     }
                 });
             ui.add_space(8.0);
             ui.label(format!(
                 "Active theme: {}",
-                theme::ThemePreset::from_index(self.selected_theme).label()
+                self.selected_theme.label()
             ));
             ui.add_space(16.0);
             ui.label("Faseela color palette");
             ui.horizontal_wrapped(|ui| {
                 for (name, color) in [
-                    ("Deep", egui::Color32::from_rgb(0x0A, 0x1D, 0x1A)),
-                    ("Green", egui::Color32::from_rgb(0x2F, 0xA3, 0x6B)),
-                    ("Mint", egui::Color32::from_rgb(0x9B, 0xEB, 0xB8)),
-                    ("Gold", egui::Color32::from_rgb(0xF2, 0xC1, 0x4E)),
+                    ("Deep", palette::BACKGROUND),
+                    ("Green", palette::PRIMARY),
+                    ("Mint", palette::PRIMARY_LIGHT),
+                    ("Gold", palette::ACCENT),
                 ] {
                     ui.vertical(|ui| {
                         let (rect, _) =
@@ -429,7 +437,8 @@ impl Showcase {
             if is_mobile {
                 ui.add_space(8.0);
                 ui.label(
-                    egui::RichText::new("Mobile layout is active").color(ui.visuals().hyperlink_color),
+                    egui::RichText::new("Mobile layout is active")
+                        .color(self.selected_theme.muted_text()),
                 );
             }
         });
@@ -448,31 +457,35 @@ impl Showcase {
             ui.label(
                 egui::RichText::new(detail)
                     .small()
-                    .color(egui::Color32::GRAY),
+                    .color(self.selected_theme.muted_text()),
             );
         });
     }
 
-    fn button_style(&self) -> IconButtonStyle {
+    fn button_style(visuals: &egui::Visuals) -> IconButtonStyle {
         IconButtonStyle {
             normal: ButtonVisuals {
-                fill: palette::PRIMARY,
-                stroke: egui::Stroke::NONE,
-                icon: palette::SURFACE,
+                fill: visuals.widgets.inactive.bg_fill,
+                stroke: visuals.widgets.inactive.bg_stroke,
+                icon: visuals.widgets.inactive.fg_stroke.color,
             },
             hovered: ButtonVisuals {
-                fill: palette::PRIMARY_LIGHT,
-                stroke: egui::Stroke::NONE,
-                icon: palette::BACKGROUND,
+                fill: visuals.widgets.hovered.bg_fill,
+                stroke: visuals.widgets.hovered.bg_stroke,
+                icon: visuals.widgets.hovered.fg_stroke.color,
             },
-            pressed: None,
+            pressed: Some(ButtonVisuals {
+                fill: visuals.widgets.active.bg_fill,
+                stroke: visuals.widgets.active.bg_stroke,
+                icon: visuals.widgets.active.fg_stroke.color,
+            }),
             selected: ButtonVisuals {
-                fill: palette::ACCENT,
-                stroke: egui::Stroke::NONE,
-                icon: palette::BACKGROUND,
+                fill: visuals.selection.bg_fill,
+                stroke: visuals.selection.stroke,
+                icon: visuals.widgets.active.fg_stroke.color,
             },
             corner_radius: egui::CornerRadius::same(9),
-            focus_stroke: egui::Stroke::new(1.0, palette::ACCENT),
+            focus_stroke: visuals.selection.stroke,
         }
     }
 }
