@@ -7,4 +7,11 @@ publish = false
 
 [dependencies]
 faseela-ui = { path = "../../crates/faseela-ui" }
+eframe = { version = "0.37", default-features = false, features = ["default_fonts", "glow"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 eframe = { version = "0.37", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = ["Window", "Document", "HtmlCanvasElement"] }
