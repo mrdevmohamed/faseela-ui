@@ -29,12 +29,23 @@ impl eframe::App for Showcase {
         ui.label("A shared interface foundation for Faseela applications.");
         ui.add_space(12.0);
 
-        if ui.button(if self.rtl { "Switch to LTR" } else { "Switch to RTL" }).clicked() {
+        if ui
+            .button(if self.rtl {
+                "Switch to LTR"
+            } else {
+                "Switch to RTL"
+            })
+            .clicked()
+        {
             self.rtl = !self.rtl;
         }
         direction::apply(
             ui.ctx(),
-            if self.rtl { Direction::Rtl } else { Direction::Ltr },
+            if self.rtl {
+                Direction::Rtl
+            } else {
+                Direction::Ltr
+            },
         );
         direction::horizontal(ui, |ui| {
             ui.label("This row follows the interface reading direction.");
@@ -46,10 +57,8 @@ impl eframe::App for Showcase {
         let tab_layout = direction::row(ui);
         ui.with_layout(tab_layout, |ui| {
             for (index, label) in ["General", "Appearance", "Keyboard"].iter().enumerate() {
-                let (rect, _) = ui.allocate_exact_size(
-                    egui::vec2(112.0, 34.0),
-                    egui::Sense::hover(),
-                );
+                let (rect, _) =
+                    ui.allocate_exact_size(egui::vec2(112.0, 34.0), egui::Sense::hover());
                 let _response = Tab::new(egui::Id::new(("showcase-tab", index)), label, index == 0)
                     .show_at(ui, rect, |ui, response| {
                         let fill = if index == 0 {
@@ -65,7 +74,11 @@ impl eframe::App for Showcase {
                             egui::Align2::CENTER_CENTER,
                             label,
                             egui::FontId::proportional(13.0),
-                            if index == 0 { palette::SURFACE } else { palette::PRIMARY_LIGHT },
+                            if index == 0 {
+                                palette::SURFACE
+                            } else {
+                                palette::PRIMARY_LIGHT
+                            },
                         );
                     });
             }
