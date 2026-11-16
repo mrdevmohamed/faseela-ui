@@ -333,9 +333,7 @@ fn drag_focus(ui: &Ui, response: &Response) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use egui::{
-        CentralPanel, Context, Event, FullOutput, Id, PointerButton, Pos2, RawInput, pos2, vec2,
-    };
+    use egui::{Context, Event, FullOutput, Id, PointerButton, Pos2, RawInput, pos2, vec2};
 
     struct HandleHarness {
         ctx: Context,
@@ -367,18 +365,17 @@ mod tests {
             let reversed = self.reversed;
             let mut result = None;
 
-            let output = ctx.run(
+            let output = ctx.run_ui(
                 RawInput {
                     screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(400.0, 200.0))),
                     events,
                     ..Default::default()
                 },
-                |ctx| {
-                    CentralPanel::default().show(ctx, |ui| {
-                        result = Some(
-                            ui.add_enabled_ui(enabled, |ui| {
+                |ui| {
+                    result = Some(
+                        ui.add_enabled_ui(enabled, |ui| {
                                 ResizeHandle::new(
-                                    Id::new("test-divider"),
+                                    Id::unique("test-divider"),
                                     axis,
                                     rect,
                                     "Resize panels",
@@ -387,10 +384,9 @@ mod tests {
                                 .value(value, 0.0..=300.0)
                                 .reversed(reversed)
                                 .show(ui)
-                            })
-                            .inner,
-                        );
-                    });
+                        })
+                        .inner,
+                    );
                 },
             );
 
@@ -588,28 +584,26 @@ mod tests {
     #[test]
     fn invalid_accessibility_ranges_make_the_handle_inert() {
         let ctx = Context::default();
-        let id = Id::new("invalid-range");
+        let id = Id::unique("invalid-range");
         let rect = Rect::from_min_size(pos2(100.0, 20.0), vec2(4.0, 140.0));
         let mut delta = None;
 
-        let _ = ctx.run(
+        let _ = ctx.run_ui(
             RawInput {
                 screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(400.0, 200.0))),
                 ..Default::default()
             },
-            |ctx| {
-                CentralPanel::default().show(ctx, |ui| {
-                    let response = ResizeHandle::new(
-                        id,
-                        SplitAxis::Horizontal,
-                        rect,
-                        "Invalid divider",
-                        style(),
-                    )
-                    .value(400.0, 0.0..=300.0)
-                    .show(ui);
-                    delta = Some(response.delta);
-                });
+            |ui| {
+                let response = ResizeHandle::new(
+                    id,
+                    SplitAxis::Horizontal,
+                    rect,
+                    "Invalid divider",
+                    style(),
+                )
+                .value(400.0, 0.0..=300.0)
+                .show(ui);
+                delta = Some(response.delta);
             },
         );
 
