@@ -2,7 +2,6 @@ use eframe::egui;
 use faseela_ui::{
     buttons::{ButtonVisuals, IconButton, IconButtonStyle},
     direction::{self, Direction},
-    tabs::Tab,
     theme::{self, palette},
 };
 
