@@ -173,7 +173,7 @@ impl Showcase {
                                         egui::RichText::new(*label).color(if selected {
                                             palette::SURFACE
                                         } else {
-                                            palette::TEXT
+                                            palette::SURFACE
                                         }),
                                     )
                                     .fill(if selected {
