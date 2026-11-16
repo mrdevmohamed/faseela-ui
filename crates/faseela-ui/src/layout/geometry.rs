@@ -307,7 +307,10 @@ mod tests {
         );
         assert!(
             split_rect(
-                Rect { min: sample().max, max: sample().min },
+                Rect {
+                    min: sample().max,
+                    max: sample().min
+                },
                 SplitAxis::Horizontal,
                 SplitSize::Ratio(0.5),
                 4.0,
@@ -394,7 +397,10 @@ mod tests {
             tiny.resized(SplitSize::FixedSecond(7.5), -100.0, 40.0),
             Some(SplitSize::FixedSecond(7.5))
         );
-        assert!(tiny.resized(SplitSize::Ratio(0.5), f32::NAN, 40.0).is_none());
+        assert!(
+            tiny.resized(SplitSize::Ratio(0.5), f32::NAN, 40.0)
+                .is_none()
+        );
 
         let zero = split_rect(
             Rect::ZERO,
