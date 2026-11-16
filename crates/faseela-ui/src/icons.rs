@@ -47,7 +47,8 @@ impl SvgIconSet {
         let icons = icons
             .iter()
             .map(|(name, bytes)| {
-                let mut svg = String::from_utf8_lossy(bytes).replace("currentColor", style.current_color);
+                let mut svg =
+                    String::from_utf8_lossy(bytes).replace("currentColor", style.current_color);
                 if let Some(stroke) = &stroke {
                     svg = svg.replace("stroke-width=\"2\"", stroke);
                 }
