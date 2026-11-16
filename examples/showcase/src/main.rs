@@ -2,7 +2,7 @@ use eframe::egui;
 use faseela_ui::{
     buttons::{ButtonVisuals, IconButton, IconButtonStyle},
     direction::{self, Direction},
-    layout::{fit_toolbar, split_rect, SplitAxis, SplitSize},
+    layout::{SplitAxis, SplitSize, fit_toolbar, split_rect},
     text,
     theme::{self, ThemePreset, palette},
 };
@@ -390,8 +390,7 @@ impl Showcase {
             ui.add_space(8.0);
 
             let width = ui.available_width().max(0.0);
-            let (outer, _) =
-                ui.allocate_exact_size(egui::vec2(width, 88.0), egui::Sense::hover());
+            let (outer, _) = ui.allocate_exact_size(egui::vec2(width, 88.0), egui::Sense::hover());
             if let Some(split) = split_rect(
                 outer,
                 SplitAxis::Horizontal,
@@ -439,10 +438,8 @@ impl Showcase {
             let widths = [72.0, 72.0, 72.0, 72.0];
             let labels = ["File", "Edit", "View", "Run"];
             let toolbar_width = ui.available_width().max(0.0);
-            let (toolbar, _) = ui.allocate_exact_size(
-                egui::vec2(toolbar_width, 32.0),
-                egui::Sense::hover(),
-            );
+            let (toolbar, _) =
+                ui.allocate_exact_size(egui::vec2(toolbar_width, 32.0), egui::Sense::hover());
             if let Some(fit) = fit_toolbar(&widths, toolbar_width, 6.0, 42.0) {
                 let overflow_visible = !fit.overflow.is_empty();
                 let mut cursor = if self.rtl {
@@ -510,7 +507,6 @@ impl Showcase {
                         foreground,
                     );
                 }
-
             } else {
                 ui.label("This width needs a scrollable or wrapping toolbar fallback.");
             }
