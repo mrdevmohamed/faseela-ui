@@ -273,11 +273,38 @@ mod tests {
 
             let mut rect = sample();
             rect.min.x = invalid;
-            assert!(split_rect(rect, SplitAxis::Horizontal, SplitSize::Ratio(0.5), 4.0, 20.0).is_none());
+            assert!(
+                split_rect(
+                    rect,
+                    SplitAxis::Horizontal,
+                    SplitSize::Ratio(0.5),
+                    4.0,
+                    20.0,
+                )
+                .is_none()
+            );
         }
 
-        assert!(split_rect(sample(), SplitAxis::Horizontal, SplitSize::Ratio(0.5), -1.0, 20.0).is_none());
-        assert!(split_rect(sample(), SplitAxis::Horizontal, SplitSize::Ratio(0.5), 4.0, -1.0).is_none());
+        assert!(
+            split_rect(
+                sample(),
+                SplitAxis::Horizontal,
+                SplitSize::Ratio(0.5),
+                -1.0,
+                20.0,
+            )
+            .is_none()
+        );
+        assert!(
+            split_rect(
+                sample(),
+                SplitAxis::Horizontal,
+                SplitSize::Ratio(0.5),
+                4.0,
+                -1.0,
+            )
+            .is_none()
+        );
         assert!(
             split_rect(
                 Rect { min: sample().max, max: sample().min },
@@ -290,7 +317,16 @@ mod tests {
         );
 
         let huge = Rect::from_min_max(pos2(-f32::MAX, 0.0), pos2(f32::MAX, 100.0));
-        assert!(split_rect(huge, SplitAxis::Horizontal, SplitSize::Ratio(0.5), 4.0, 20.0).is_none());
+        assert!(
+            split_rect(
+                huge,
+                SplitAxis::Horizontal,
+                SplitSize::Ratio(0.5),
+                4.0,
+                20.0,
+            )
+            .is_none()
+        );
     }
 
     #[test]
