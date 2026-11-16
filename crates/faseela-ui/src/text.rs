@@ -4,7 +4,7 @@
 //! presentation boundary; never store, search, edit, or copy its visual-order result.
 
 use arabic::{Direction as ArabicDirection, reshape};
-use unicode_bidi::BidiInfo;
+use unicode_bidi::{bidi_class, BidiClass, BidiInfo, Level};
 use unicode_segmentation::UnicodeSegmentation;
 
 /// Shape Arabic joining forms and reorder mixed RTL/LTR text for egui's left-to-right renderer.
@@ -42,7 +42,17 @@ fn display_line(logical_line: &str) -> String {
 
     // Shape first while characters are still in logical reading order.
     let shaped = reshape(logical_line, ArabicDirection::Logical);
-    let bidi = BidiInfo::new(&shaped, None);
+    // egui lays glyphs out left-to-right. Resolve the paragraph base direction from
+    // the first strong character instead of always relying on the default LTR base.
+    let base_level = logical_line
+        .chars()
+        .map(bidi_class)
+        .find_map(|class| match class {
+            BidiClass::R | BidiClass::AL => Some(Level::rtl()),
+            BidiClass::L => Some(Level::ltr()),
+            _ => None,
+        });
+    let bidi = BidiInfo::new(&shaped, base_level);
     let clusters: Vec<(usize, &str)> = shaped.grapheme_indices(true).collect();
 
     // egui consumes text left-to-right. Reorder complete grapheme clusters rather than UTF-8
@@ -94,6 +104,15 @@ mod tests {
         assert!(visual.contains("Faseela"));
         assert!(visual.contains("UI"));
         assert!(visual.contains("1.0"));
+        assert!(visual.starts_with("1.0"), "RTL paragraph visual order: {visual:?}");
+    }
+
+    #[test]
+    fn paragraph_base_direction_comes_from_first_strong_character() {
+        let arabic_first = display_text("العربية Faseela 123");
+        let latin_first = display_text("Faseela العربية 123");
+        assert!(arabic_first.starts_with("123"), "{arabic_first:?}");
+        assert!(latin_first.starts_with("Faseela"), "{latin_first:?}");
     }
 
     #[test]
