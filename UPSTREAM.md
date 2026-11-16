@@ -32,6 +32,7 @@ This repository is not a fork and does not imply endorsement by the Craft/ArtCra
 - `crates/faseela-ui/src/layout/geometry.rs` adapts the stateless split-rectangle geometry from Craft UI's `crates/ui/src/layout/geometry.rs`. The Faseela module retains the MIT OR Apache-2.0 attribution, but leaves drag gestures, persistence, pane ownership, and direction-to-pane mapping to the application.
 - `crates/faseela-ui/src/layout/toolbar.rs` adapts Craft UI's bounded toolbar fitting algorithm from `crates/ui/src/layout/toolbar.rs`. The caller owns the overflow control and must make every returned overflow index reachable; this library does not hide commands or build menus.
 - The port intentionally excludes the larger Craft docking model and window policy. Each algorithm has independent boundary and sizing tests and uses only the existing `egui` dependency.
+- `crates/faseela-ui/src/layout/resize.rs` adapts Craft UI's resize-handle interaction model from `crates/ui/src/layout/resize.rs`, using the published egui 0.37 APIs. It retains pointer/keyboard focus handling and AccessKit splitter actions, but returns a resize delta instead of mutating a dock model. The source adaptation retains the upstream MIT OR Apache-2.0 attribution.
 
 
 ## Arabic text rendering
