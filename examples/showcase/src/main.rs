@@ -384,7 +384,9 @@ impl Showcase {
         egui::Frame::group(ui.style()).show(ui, |ui| {
             ui.set_width(ui.available_width());
             ui.heading("Responsive layout");
-            ui.label("Split geometry and toolbar overflow are calculated by shared layout helpers.");
+            ui.label(
+                "Split geometry and toolbar overflow are calculated by shared layout helpers.",
+            );
             ui.add_space(8.0);
 
             let width = ui.available_width().max(0.0);
@@ -444,13 +446,6 @@ impl Showcase {
             if let Some(fit) = fit_toolbar(&widths, toolbar_width, 6.0, 42.0) {
                 let overflow_visible = !fit.overflow.is_empty();
                 let visible_items = fit.shown.len() + usize::from(overflow_visible);
-                let total_width = fit
-                    .shown
-                    .iter()
-                    .map(|(_, item_width)| *item_width)
-                    .sum::<f32>()
-                    + fit.overflow_width
-                    + visible_items.saturating_sub(1) as f32 * 6.0;
                 let mut cursor = if self.rtl {
                     toolbar.right()
                 } else {
@@ -517,7 +512,6 @@ impl Showcase {
                     );
                 }
 
-                let _ = total_width;
             } else {
                 ui.label("This width needs a scrollable or wrapping toolbar fallback.");
             }
