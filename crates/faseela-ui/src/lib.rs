@@ -7,6 +7,7 @@ pub mod buttons;
 pub mod direction;
 pub mod icons;
 pub mod tabs;
+pub mod text;
 pub mod theme;
 
 pub use egui;
