@@ -68,16 +68,14 @@ fn display_line(logical_line: &str) -> String {
     // Keep integer-only tokens at the paragraph boundary in RTL paragraphs. Decimal
     // numbers remain attached to their preceding Latin run (for example, "UI 1.0").
     // egui receives the words in visual order but still shapes each word itself.
-    if paragraph_level == Level::rtl() {
-        for (index, (_, word)) in words.iter().enumerate() {
-            if word.chars().all(char::is_whitespace) {
-                let next_is_integer = words.get(index + 1).is_some_and(|(_, next)| {
-                    !next.is_empty() && next.chars().all(|character| character.is_ascii_digit())
-                });
+    for (index, (_, word)) in words.iter().enumerate() {
+        if word.chars().all(char::is_whitespace) {
+            let next_is_integer = words.get(index + 1).is_some_and(|(_, next)| {
+                !next.is_empty() && next.chars().all(|character| character.is_ascii_digit())
+            });
 
-                if next_is_integer {
-                    word_levels[index] = paragraph_level;
-                }
+            if next_is_integer {
+                word_levels[index] = paragraph_level;
             }
         }
     }
