@@ -69,7 +69,7 @@ struct Showcase {
 
 impl eframe::App for Showcase {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show_inside(ui, |ui| {
+        {
             ui.heading("Faseela UI");
             ui.label("A shared interface foundation for Faseela applications.");
             ui.add_space(12.0);
@@ -106,7 +106,7 @@ impl eframe::App for Showcase {
                     let (rect, _) =
                         ui.allocate_exact_size(egui::vec2(112.0, 36.0), egui::Sense::hover());
                     let response = Tab::new(
-                        egui::Id::new(("showcase-tab", index)),
+                        egui::Id::unique(("showcase-tab", index)),
                         label,
                         index == self.selected_tab,
                     )
@@ -189,6 +189,6 @@ impl eframe::App for Showcase {
             } else {
                 "Try the icon button"
             });
-        });
+        }
     }
 }
