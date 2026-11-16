@@ -2,6 +2,7 @@ use eframe::egui;
 use faseela_ui::{
     buttons::{ButtonVisuals, IconButton, IconButtonStyle},
     direction::{self, Direction},
+    text,
     theme::{self, palette},
 };
 
@@ -12,6 +13,7 @@ fn main() -> eframe::Result<()> {
         eframe::NativeOptions::default(),
         Box::new(|cc| {
             theme::apply_dark(&cc.egui_ctx);
+            theme::install_arabic_font(&cc.egui_ctx);
             Ok(Box::<Showcase>::default())
         }),
     )
@@ -304,11 +306,11 @@ impl Showcase {
             if ui
                 .add_sized(
                     egui::vec2(ui.available_width(), 44.0),
-                    egui::Button::new(if self.rtl {
+                    egui::Button::new(text::display_text(if self.rtl {
                         "Switch to left-to-right"
                     } else {
                         "التبديل إلى RTL"
-                    }),
+                    })),
                 )
                 .clicked()
             {
