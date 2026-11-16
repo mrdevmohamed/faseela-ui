@@ -4,6 +4,7 @@
 //! Widgets expose focused APIs and use egui primitives so applications can compose them.
 
 pub mod buttons;
+pub mod icons;
 pub mod theme;
 
 pub use egui;
