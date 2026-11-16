@@ -238,7 +238,7 @@ mod tests {
     fn whole_tabs_keep_order_and_selected_tab() {
         let result = fit_whole(&[60.0, 70.0, 80.0, 90.0], 2, 190.0, 24.0);
         assert!(result.shown.iter().any(|(index, _)| *index == 2));
-        assert_eq!(result.overflow, vec![3]);
+        assert_eq!(result.overflow, vec![1, 3]);
         assert!(total(&result) <= 190.0);
     }
 
