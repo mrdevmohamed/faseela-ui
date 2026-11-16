@@ -1,6 +1,9 @@
 //! Faseela's initial design tokens and egui style integration.
 
-use egui::{Color32, Context, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Margin, Stroke, Style, Visuals};
+use egui::{
+    Color32, Context, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Margin, Stroke,
+    Style, Visuals,
+};
 use std::sync::Arc;
 
 /// Official Faseela palette.
