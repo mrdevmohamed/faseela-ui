@@ -192,7 +192,6 @@ fn squeeze(natural: &[f32], indices: &[usize], total: f32, minimum: f32) -> Vec<
         .collect()
 }
 
-
 /// An accessible tab interaction primitive with caller-owned painting and selection state.
 ///
 /// IDs must be unique within the parent UI scope and must not depend on translated labels.
