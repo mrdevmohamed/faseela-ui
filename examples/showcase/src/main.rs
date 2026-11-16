@@ -125,13 +125,13 @@ impl Showcase {
                     };
                     let response = ui.add_sized(
                         egui::vec2(ui.available_width() / (3 - index) as f32, 48.0),
-                        egui::Button::new(
-                            egui::RichText::new(*label).size(11.0).color(if selected {
+                        egui::Button::new(egui::RichText::new(*label).size(11.0).color(
+                            if selected {
                                 palette::SURFACE
                             } else {
                                 palette::PRIMARY_LIGHT
-                            }),
-                        )
+                            },
+                        ))
                         .fill(fill)
                         .stroke(egui::Stroke::NONE),
                     );
@@ -168,13 +168,13 @@ impl Showcase {
                                 let selected = self.selected_tab == index;
                                 let response = ui.add_sized(
                                     egui::vec2(ui.available_width(), 44.0),
-                                    egui::Button::new(
-                                        egui::RichText::new(*label).color(if selected {
+                                    egui::Button::new(egui::RichText::new(*label).color(
+                                        if selected {
                                             palette::SURFACE
                                         } else {
                                             palette::SURFACE
-                                        }),
-                                    )
+                                        },
+                                    ))
                                     .fill(if selected {
                                         palette::PRIMARY
                                     } else {
@@ -187,21 +187,18 @@ impl Showcase {
                                 }
                                 ui.add_space(5.0);
                             }
-                            ui.with_layout(
-                                egui::Layout::bottom_up(egui::Align::Min),
-                                |ui| {
-                                    ui.label(
-                                        egui::RichText::new("Rust · egui · WebAssembly")
-                                            .small()
-                                            .color(egui::Color32::GRAY),
-                                    );
-                                    ui.label(
-                                        egui::RichText::new("Faseela UI 0.1")
-                                            .small()
-                                            .color(palette::PRIMARY_LIGHT),
-                                    );
-                                },
-                            );
+                            ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
+                                ui.label(
+                                    egui::RichText::new("Rust · egui · WebAssembly")
+                                        .small()
+                                        .color(egui::Color32::GRAY),
+                                );
+                                ui.label(
+                                    egui::RichText::new("Faseela UI 0.1")
+                                        .small()
+                                        .color(palette::PRIMARY_LIGHT),
+                                );
+                            });
                         });
                 },
             );
@@ -217,17 +214,14 @@ impl Showcase {
                             1 => "Appearance",
                             _ => "Preferences",
                         });
-                        ui.with_layout(
-                            egui::Layout::right_to_left(egui::Align::Center),
-                            |ui| {
-                                ui.label(
-                                    egui::RichText::new("INTERACTIVE SHOWCASE")
-                                        .small()
-                                        .strong()
-                                        .color(palette::PRIMARY_LIGHT),
-                                );
-                            },
-                        );
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(
+                                egui::RichText::new("INTERACTIVE SHOWCASE")
+                                    .small()
+                                    .strong()
+                                    .color(palette::PRIMARY_LIGHT),
+                            );
+                        });
                     });
                     ui.separator();
                     egui::ScrollArea::vertical()
