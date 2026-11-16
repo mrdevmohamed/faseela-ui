@@ -2,16 +2,18 @@
 
 Reusable Rust UI foundations for desktop applications in the Faseela ecosystem.
 
-The project is based on **egui** and is designed to keep application logic separate from reusable presentation components.
+The project is based on **egui** and keeps application state and domain logic separate from reusable presentation components.
 
 ## Current status
 
-This repository is the clean Faseela-owned foundation. The Craft UI extraction is being evaluated and ported in stages; upstream code is not represented as already imported. The first milestone establishes the workspace, palette integration, and a runnable showcase. Selected reusable controls, SVG icon handling, tab sizing and interaction primitives, and explicit LTR/RTL direction helpers are now implemented. Larger docking/layout systems and font infrastructure remain under evaluation.
+Faseela UI provides a reusable foundation for application chrome: buttons, SVG icon preparation, tabs, themes, explicit LTR/RTL interface helpers, short-label BiDi display support, bounded split geometry, and responsive toolbar fitting. The interactive native/WebAssembly showcase exercises the shared components.
+
+Craft UI functionality is being evaluated and ported in small, independently testable stages. Application-specific docking trees, commands, document models, and persistence remain outside this crate. The current Arabic display helper is transitional and must not be used for editable text.
 
 ## Workspace
 
-- `crates/faseela-ui`: shared widgets and design foundations, including buttons, icons, tabs, RTL helpers, bidirectional display ordering, and theme tokens.
-- `examples/showcase`: executable preview app.
+- `crates/faseela-ui`: shared widgets and design foundations, including buttons, icons, tabs, layout algorithms, RTL helpers, text display helpers, and theme tokens.
+- `examples/showcase`: executable native and WebAssembly preview app.
 
 ## Live showcase
 
@@ -22,7 +24,7 @@ The interactive Rust/egui showcase is compiled to WebAssembly and published with
 - Browser page: `examples/showcase/index.html`
 - Build locally: install the `wasm32-unknown-unknown` target and Trunk, then run `cd examples/showcase && trunk serve`.
 
-The showcase exercises the shared theme, icon button, tabs, selection control, and LTR/RTL direction switch. It uses the same Rust widgets as the native showcase.
+The showcase exercises the shared theme, icon button, tabs, selection control, LTR/RTL direction switch, and responsive split layout. It uses the same Rust widgets as the native showcase.
 
 ### Arabic and mixed-direction text
 
@@ -34,7 +36,11 @@ let label = faseela_ui::text::display_text("مرحبًا بك في Faseela UI");
 ui.label(label);
 ```
 
-The helper is intended for short UI strings, not as a replacement for a full text-layout engine in editors or long-form documents. See [UPSTREAM.md](UPSTREAM.md) for implementation and font attribution notes, and [docs/arabic-support.md](docs/arabic-support.md) for the current support matrix, known limitations, Craft research, and roadmap.
+The helper is intended for short UI strings, not as a replacement for a full text-layout engine in editors or long-form documents. Do not pass its output to `TextEdit`, store it, search it, or copy it. See [UPSTREAM.md](UPSTREAM.md) for implementation and font attribution notes, and [docs/arabic-support.md](docs/arabic-support.md) for limitations and roadmap.
+
+### Layout primitives
+
+The `layout` module contains stateless helpers for bounded two-pane geometry and toolbar overflow fitting. The caller owns the actual UI, resizer interaction, overflow menu, and persisted sizing. See [docs/layout.md](docs/layout.md) for examples and edge-case behavior.
 
 ## Quick start
 
@@ -44,20 +50,21 @@ faseela-ui = { git = "https://github.com/mrdevmohamed/faseela-ui" }
 ```
 
 ```rust
-faseela_ui::theme::apply_dark(&ctx);\nfaseela_ui::direction::apply(&ctx, faseela_ui::direction::Direction::Rtl);
+faseela_ui::theme::apply_dark(&ctx);
+faseela_ui::direction::apply(&ctx, faseela_ui::direction::Direction::Rtl);
 ```
 
 ## Design principles
 
-- Applications own their domain logic, state, and document models.
-- Shared UI components expose small composable APIs.
+- Applications own their domain logic, state, commands, and document models.
+- Shared UI components expose small composable APIs and return proposals rather than mutating app state.
 - Faseela palette is a default theme, not a hard-coded restriction.
 - Arabic/RTL, keyboard navigation, accessibility, HiDPI, X11, and Wayland are explicit compatibility goals.
 - Avoid pulling in unrelated Craft application engines or format libraries.
 
 ## Upstream inspiration
 
-The project evaluates reusable UI work from [storytold/craft-libs](https://github.com/storytold/craft-libs), especially its `crates/ui` crate. Any source-derived files will retain their original copyright notices and attribution, and modified files will be marked as modified. See [UPSTREAM.md](UPSTREAM.md).
+The project evaluates reusable UI work from [storytold/craft-libs](https://github.com/storytold/craft-libs), especially its `crates/ui` crate. Source-derived algorithms retain attribution and are maintained independently in this repository. See [UPSTREAM.md](UPSTREAM.md).
 
 ## License
 

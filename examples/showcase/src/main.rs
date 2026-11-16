@@ -2,6 +2,7 @@ use eframe::egui;
 use faseela_ui::{
     buttons::{ButtonVisuals, IconButton, IconButtonStyle},
     direction::{self, Direction},
+    layout::{SplitAxis, SplitSize, fit_toolbar, split_rect},
     text,
     theme::{self, ThemePreset, palette},
 };
@@ -321,6 +322,9 @@ impl Showcase {
         });
 
         ui.add_space(14.0);
+        self.layout_preview(ui);
+
+        ui.add_space(14.0);
         egui::Frame::group(ui.style()).show(ui, |ui| {
             ui.set_width(ui.available_width());
             ui.heading("Direction & language");
@@ -373,6 +377,139 @@ impl Showcase {
             } else {
                 "Action is inactive"
             });
+        });
+    }
+
+    fn layout_preview(&self, ui: &mut egui::Ui) {
+        egui::Frame::group(ui.style()).show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.heading("Responsive layout");
+            ui.label(
+                "Split geometry and toolbar overflow are calculated by shared layout helpers.",
+            );
+            ui.add_space(8.0);
+
+            let width = ui.available_width().max(0.0);
+            let (outer, _) = ui.allocate_exact_size(egui::vec2(width, 88.0), egui::Sense::hover());
+            if let Some(split) = split_rect(
+                outer,
+                SplitAxis::Horizontal,
+                SplitSize::Ratio(0.64),
+                8.0,
+                64.0,
+            ) {
+                // Geometry is physical; the app maps its logical leading pane according to RTL.
+                let (leading, trailing) = if self.rtl {
+                    (split.second, split.first)
+                } else {
+                    (split.first, split.second)
+                };
+                let painter = ui.painter();
+                let text_color = ui.visuals().text_color();
+                painter.rect_filled(leading, egui::CornerRadius::same(8), palette::PRIMARY);
+                painter.rect_filled(
+                    split.divider,
+                    egui::CornerRadius::same(3),
+                    ui.visuals().widgets.noninteractive.bg_stroke.color,
+                );
+                painter.rect_filled(
+                    trailing,
+                    egui::CornerRadius::same(8),
+                    ui.visuals().widgets.inactive.bg_fill,
+                );
+                painter.text(
+                    leading.center(),
+                    egui::Align2::CENTER_CENTER,
+                    "LEADING",
+                    egui::FontId::proportional(11.0),
+                    text_color,
+                );
+                painter.text(
+                    trailing.center(),
+                    egui::Align2::CENTER_CENTER,
+                    "TRAILING",
+                    egui::FontId::proportional(11.0),
+                    text_color,
+                );
+            }
+
+            ui.add_space(10.0);
+            ui.label("Toolbar fitting");
+            let widths = [72.0, 72.0, 72.0, 72.0];
+            let labels = ["File", "Edit", "View", "Run"];
+            let toolbar_width = ui.available_width().max(0.0);
+            let (toolbar, _) =
+                ui.allocate_exact_size(egui::vec2(toolbar_width, 32.0), egui::Sense::hover());
+            if let Some(fit) = fit_toolbar(&widths, toolbar_width, 6.0, 42.0) {
+                let overflow_visible = !fit.overflow.is_empty();
+                let mut cursor = if self.rtl {
+                    toolbar.right()
+                } else {
+                    toolbar.left()
+                };
+                let painter = ui.painter();
+                let foreground = ui.visuals().text_color();
+
+                for (index, item_width) in &fit.shown {
+                    let item_rect = if self.rtl {
+                        cursor -= *item_width;
+                        let rect = egui::Rect::from_min_size(
+                            egui::pos2(cursor, toolbar.top()),
+                            egui::vec2(*item_width, toolbar.height()),
+                        );
+                        cursor -= 6.0;
+                        rect
+                    } else {
+                        let rect = egui::Rect::from_min_size(
+                            egui::pos2(cursor, toolbar.top()),
+                            egui::vec2(*item_width, toolbar.height()),
+                        );
+                        cursor += *item_width + 6.0;
+                        rect
+                    };
+                    painter.rect_filled(
+                        item_rect,
+                        egui::CornerRadius::same(6),
+                        ui.visuals().widgets.inactive.bg_fill,
+                    );
+                    painter.text(
+                        item_rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        labels[*index],
+                        egui::FontId::proportional(11.0),
+                        foreground,
+                    );
+                }
+
+                if overflow_visible {
+                    let overflow_rect = if self.rtl {
+                        cursor -= fit.overflow_width;
+                        egui::Rect::from_min_size(
+                            egui::pos2(cursor, toolbar.top()),
+                            egui::vec2(fit.overflow_width, toolbar.height()),
+                        )
+                    } else {
+                        egui::Rect::from_min_size(
+                            egui::pos2(cursor, toolbar.top()),
+                            egui::vec2(fit.overflow_width, toolbar.height()),
+                        )
+                    };
+                    painter.rect_filled(
+                        overflow_rect,
+                        egui::CornerRadius::same(6),
+                        palette::PRIMARY,
+                    );
+                    painter.text(
+                        overflow_rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        format!("+{}", fit.overflow.len()),
+                        egui::FontId::proportional(11.0),
+                        foreground,
+                    );
+                }
+            } else {
+                ui.label("This width needs a scrollable or wrapping toolbar fallback.");
+            }
         });
     }
 
