@@ -34,7 +34,7 @@ let label = faseela_ui::text::display_text("مرحبًا بك في Faseela UI");
 ui.label(label);
 ```
 
-The helper is intended for short UI strings, not as a replacement for a full text-layout engine in editors or long-form documents. See [UPSTREAM.md](UPSTREAM.md) for implementation and font attribution notes.
+The helper is intended for short UI strings, not as a replacement for a full text-layout engine in editors or long-form documents. See [UPSTREAM.md](UPSTREAM.md) for implementation and font attribution notes, and [docs/arabic-support.md](docs/arabic-support.md) for the current support matrix, known limitations, Craft research, and roadmap.
 
 ## Quick start
 
