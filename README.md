@@ -10,7 +10,7 @@ This repository is the clean Faseela-owned foundation. The Craft UI extraction i
 
 ## Workspace
 
-- `crates/faseela-ui`: shared widgets and design foundations, including buttons, icons, tabs, RTL helpers, Arabic text shaping, and theme tokens.
+- `crates/faseela-ui`: shared widgets and design foundations, including buttons, icons, tabs, RTL helpers, bidirectional display ordering, and theme tokens.
 - `examples/showcase`: executable preview app.
 
 ## Live showcase
@@ -26,7 +26,7 @@ The showcase exercises the shared theme, icon button, tabs, selection control, a
 
 ### Arabic and mixed-direction text
 
-Faseela includes a display helper for Arabic joining forms and mixed RTL/LTR labels, plus a bundled Noto Sans Arabic fallback (with DejaVu Sans as the broad final fallback). Keep source strings in their original logical Unicode order, then shape them only when rendering:
+Faseela includes a display helper that reorders mixed RTL/LTR labels word by word and mirrors paired punctuation (such as brackets) inside RTL runs, plus a bundled Noto Sans Arabic fallback (with DejaVu Sans as the broad final fallback). Letter joining is left to egui's own shaper, so strings are never converted to presentation forms. Keep source strings in their original logical Unicode order, then shape them only when rendering:
 
 ```rust
 faseela_ui::theme::install_arabic_font(&ctx);
