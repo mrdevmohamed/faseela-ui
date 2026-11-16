@@ -118,7 +118,7 @@ impl Showcase {
             let content_height = (ui.available_height() - 62.0).max(120.0);
             ui.allocate_ui_with_layout(
                 egui::vec2(ui.available_width(), content_height),
-                egui::Layout::top_down(egui::Align::Min),
+                egui::Layout::top_down(direction::start_align(ui)),
                 |ui| {
                     egui::ScrollArea::vertical()
                         .auto_shrink([false, false])
@@ -127,7 +127,10 @@ impl Showcase {
             );
 
             ui.separator();
-            direction::horizontal(ui, |ui| {
+            let nav_size = egui::vec2(ui.available_width(), 52.0);
+            let nav_layout = direction::row(ui);
+            ui.allocate_ui_with_layout(nav_size, nav_layout, |ui| {
+                let button_width = ui.available_width() / 3.0;
                 for (index, label) in ["Home", "Appearance", "Settings"].iter().enumerate() {
                     let selected = self.selected_tab == index;
                     let fill = if selected {
@@ -136,7 +139,7 @@ impl Showcase {
                         palette::BACKGROUND
                     };
                     let response = ui.add_sized(
-                        egui::vec2(ui.available_width() / (3 - index) as f32, 48.0),
+                        egui::vec2(button_width, 48.0),
                         egui::Button::new(egui::RichText::new(*label).size(11.0).color(
                             if selected {
                                 palette::SURFACE
