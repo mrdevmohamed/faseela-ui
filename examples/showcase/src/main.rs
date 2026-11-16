@@ -80,7 +80,11 @@ impl eframe::App for Showcase {
                 ui.add_space(outer_padding);
 
                 ui.horizontal(|ui| {
-                    ui.heading(egui::RichText::new("Faseela").size(if is_mobile { 26.0 } else { 32.0 }));
+                    ui.heading(egui::RichText::new("Faseela").size(if is_mobile {
+                        26.0
+                    } else {
+                        32.0
+                    }));
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(
                             egui::RichText::new("UI PREVIEW")
@@ -99,7 +103,11 @@ impl eframe::App for Showcase {
 
                 direction::apply(
                     ui.ctx(),
-                    if self.rtl { Direction::Rtl } else { Direction::Ltr },
+                    if self.rtl {
+                        Direction::Rtl
+                    } else {
+                        Direction::Ltr
+                    },
                 );
 
                 let tab_width = if is_mobile {
@@ -108,11 +116,11 @@ impl eframe::App for Showcase {
                     132.0
                 };
                 ui.horizontal_wrapped(|ui| {
-                    for (index, label) in ["Overview", "Appearance", "Preferences"].iter().enumerate() {
-                        let (rect, _) = ui.allocate_exact_size(
-                            egui::vec2(tab_width, 42.0),
-                            egui::Sense::hover(),
-                        );
+                    for (index, label) in
+                        ["Overview", "Appearance", "Preferences"].iter().enumerate()
+                    {
+                        let (rect, _) = ui
+                            .allocate_exact_size(egui::vec2(tab_width, 42.0), egui::Sense::hover());
                         let response = Tab::new(
                             ui.make_persistent_id(("main-tab", index)),
                             label,
@@ -175,14 +183,28 @@ impl Showcase {
     fn overview(&mut self, ui: &mut egui::Ui, is_mobile: bool) {
         egui::Frame::group(ui.style()).show(ui, |ui| {
             ui.set_width(ui.available_width());
-            ui.label(egui::RichText::new("WELCOME BACK").small().strong().color(palette::PRIMARY_LIGHT));
+            ui.label(
+                egui::RichText::new("WELCOME BACK")
+                    .small()
+                    .strong()
+                    .color(palette::PRIMARY_LIGHT),
+            );
             ui.add_space(6.0);
-            ui.heading(if is_mobile { "Your interface" } else { "Your Faseela workspace" });
+            ui.heading(if is_mobile {
+                "Your interface"
+            } else {
+                "Your Faseela workspace"
+            });
             ui.label("Explore shared components running as a real interactive application.");
             ui.add_space(14.0);
             ui.horizontal_wrapped(|ui| {
                 self.stat_card(ui, "Components", "04", "Ready to use");
-                self.stat_card(ui, "Direction", if self.rtl { "RTL" } else { "LTR" }, "Reading layout");
+                self.stat_card(
+                    ui,
+                    "Direction",
+                    if self.rtl { "RTL" } else { "LTR" },
+                    "Reading layout",
+                );
             });
         });
 
@@ -192,15 +214,30 @@ impl Showcase {
             ui.heading("Direction & language");
             ui.label("Switch the reading direction and see the layout respond immediately.");
             ui.add_space(10.0);
-            if ui.add_sized(
-                egui::vec2(ui.available_width(), 44.0),
-                egui::Button::new(if self.rtl { "Switch to left-to-right" } else { "التبديل إلى RTL" }),
-            ).clicked() {
+            if ui
+                .add_sized(
+                    egui::vec2(ui.available_width(), 44.0),
+                    egui::Button::new(if self.rtl {
+                        "Switch to left-to-right"
+                    } else {
+                        "التبديل إلى RTL"
+                    }),
+                )
+                .clicked()
+            {
                 self.rtl = !self.rtl;
             }
             direction::horizontal(ui, |ui| {
                 ui.label("Reading direction");
-                ui.label(egui::RichText::new(if self.rtl { "Right to left" } else { "Left to right" }).strong().color(palette::PRIMARY_LIGHT));
+                ui.label(
+                    egui::RichText::new(if self.rtl {
+                        "Right to left"
+                    } else {
+                        "Left to right"
+                    })
+                    .strong()
+                    .color(palette::PRIMARY_LIGHT),
+                );
             });
         });
 
@@ -218,7 +255,11 @@ impl Showcase {
             if response.clicked() {
                 self.icon_activated = !self.icon_activated;
             }
-            ui.label(if self.icon_activated { "Action is active" } else { "Action is inactive" });
+            ui.label(if self.icon_activated {
+                "Action is active"
+            } else {
+                "Action is inactive"
+            });
         });
     }
 
@@ -246,7 +287,8 @@ impl Showcase {
                     ("Gold", egui::Color32::from_rgb(0xF2, 0xC1, 0x4E)),
                 ] {
                     ui.vertical(|ui| {
-                        let (rect, _) = ui.allocate_exact_size(egui::vec2(48.0, 38.0), egui::Sense::hover());
+                        let (rect, _) =
+                            ui.allocate_exact_size(egui::vec2(48.0, 38.0), egui::Sense::hover());
                         ui.painter().rect_filled(rect, 7.0, color);
                         ui.label(egui::RichText::new(name).small());
                     });
@@ -270,7 +312,9 @@ impl Showcase {
             ui.label("• Responsive layout for phones and desktops");
             if is_mobile {
                 ui.add_space(8.0);
-                ui.label(egui::RichText::new("Mobile layout is active").color(palette::PRIMARY_LIGHT));
+                ui.label(
+                    egui::RichText::new("Mobile layout is active").color(palette::PRIMARY_LIGHT),
+                );
             }
         });
     }
@@ -278,9 +322,17 @@ impl Showcase {
     fn stat_card(&self, ui: &mut egui::Ui, title: &str, value: &str, detail: &str) {
         egui::Frame::group(ui.style()).show(ui, |ui| {
             ui.set_min_width(egui::vec2(104.0, 76.0));
-            ui.label(egui::RichText::new(title).small().color(palette::PRIMARY_LIGHT));
+            ui.label(
+                egui::RichText::new(title)
+                    .small()
+                    .color(palette::PRIMARY_LIGHT),
+            );
             ui.heading(egui::RichText::new(value).size(24.0));
-            ui.label(egui::RichText::new(detail).small().color(egui::Color32::GRAY));
+            ui.label(
+                egui::RichText::new(detail)
+                    .small()
+                    .color(egui::Color32::GRAY),
+            );
         });
     }
 
