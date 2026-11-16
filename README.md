@@ -10,7 +10,7 @@ This repository is the clean Faseela-owned foundation. The Craft UI extraction i
 
 ## Workspace
 
-- `crates/faseela-ui`: shared widgets and design foundations, including buttons, icons, tabs, RTL helpers, and theme tokens.
+- `crates/faseela-ui`: shared widgets and design foundations, including buttons, icons, tabs, RTL helpers, Arabic text shaping, and theme tokens.
 - `examples/showcase`: executable preview app.
 
 ## Live showcase
@@ -23,6 +23,18 @@ The interactive Rust/egui showcase is compiled to WebAssembly and published with
 - Build locally: install the `wasm32-unknown-unknown` target and Trunk, then run `cd examples/showcase && trunk serve`.
 
 The showcase exercises the shared theme, icon button, tabs, selection control, and LTR/RTL direction switch. It uses the same Rust widgets as the native showcase.
+
+### Arabic and mixed-direction text
+
+Faseela includes a display helper for Arabic joining forms and mixed RTL/LTR labels, plus a bundled DejaVu Sans fallback font. Keep source strings in their original logical Unicode order, then shape them only when rendering:
+
+```rust
+faseela_ui::theme::install_arabic_font(&ctx);
+let label = faseela_ui::text::display_text("مرحبًا بك في Faseela UI");
+ui.label(label);
+```
+
+The helper is intended for short UI strings, not as a replacement for a full text-layout engine in editors or long-form documents. See [UPSTREAM.md](UPSTREAM.md) for implementation and font attribution notes.
 
 ## Quick start
 
