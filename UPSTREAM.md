@@ -20,3 +20,5 @@ This repository is not a fork and does not imply endorsement by the Craft/ArtCra
 - `crates/faseela-ui/src/buttons.rs` adapts the icon button implementation from [storytold/craft-libs](https://github.com/storytold/craft-libs/tree/main/crates/ui/src/buttons). The upstream component is distributed under MIT OR Apache-2.0. The port retains the interaction and accessibility model while keeping application assets, styling values, selection state, and command handling owned by Faseela applications. The source file documents the upstream project; ongoing changes are maintained here.
 
 - `crates/faseela-ui/src/icons.rs` adapts Craft's embedded SVG icon catalog. Faseela apps supply their own SVG assets and install egui's SVG loader; this crate only prepares and shares trusted embedded bytes.
+
+- `crates/faseela-ui/src/tabs.rs` adapts Craft's pure tab-width fitting algorithms. It intentionally excludes tab painting, drag interactions, dialog behavior, and application-owned overflow menus so the layout logic remains independent.
