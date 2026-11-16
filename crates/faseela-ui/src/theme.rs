@@ -1,6 +1,7 @@
 //! Faseela's initial design tokens and egui style integration.
 
-use egui::{Color32, Context, CornerRadius, FontId, Margin, Stroke, Style, Visuals};
+use egui::{Color32, Context, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Margin, Stroke, Style, Visuals};
+use std::sync::Arc;
 
 /// Official Faseela palette.
 pub mod palette {
@@ -11,6 +12,30 @@ pub mod palette {
     pub const PRIMARY_LIGHT: Color32 = Color32::from_rgb(0x9B, 0xEB, 0xB8);
     pub const ACCENT: Color32 = Color32::from_rgb(0xF2, 0xC1, 0x4E);
     pub const SURFACE: Color32 = Color32::from_rgb(0xE8, 0xF7, 0xEE);
+}
+
+/// Install a bundled Arabic-capable font as the final fallback for UI text.
+///
+/// This resets the font definitions to egui's defaults plus DejaVu Sans. Call it during
+/// application startup, after any custom font setup that should be replaced by this stack.
+pub fn install_arabic_font(ctx: &Context) {
+    let mut fonts = FontDefinitions::default();
+    let font_name = "faseela-arabic-fallback".to_owned();
+
+    fonts.font_data.insert(
+        font_name.clone(),
+        Arc::new(FontData::from_static(dejavu::sans::regular())),
+    );
+
+    for family in [FontFamily::Proportional, FontFamily::Monospace] {
+        fonts
+            .families
+            .entry(family)
+            .or_default()
+            .push(font_name.clone());
+    }
+
+    ctx.set_fonts(fonts);
 }
 
 /// Applies the initial dark Faseela visual language to an egui context.
