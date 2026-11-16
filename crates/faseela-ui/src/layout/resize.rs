@@ -365,7 +365,7 @@ mod tests {
             let reversed = self.reversed;
             let mut result = None;
 
-            let output = ctx.run_ui(
+            let mut output = ctx.run_ui(
                 RawInput {
                     screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(400.0, 200.0))),
                     events,
@@ -390,8 +390,9 @@ mod tests {
                 },
             );
 
+            output.textures_delta.clear();
             (
-                result.expect("the central panel must render the handle"),
+                result.expect("the root UI must render the handle"),
                 output,
             )
         }
@@ -588,7 +589,7 @@ mod tests {
         let rect = Rect::from_min_size(pos2(100.0, 20.0), vec2(4.0, 140.0));
         let mut delta = None;
 
-        let _ = ctx.run_ui(
+        let mut output = ctx.run_ui(
             RawInput {
                 screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(400.0, 200.0))),
                 ..Default::default()
@@ -601,6 +602,7 @@ mod tests {
                 delta = Some(response.delta);
             },
         );
+        output.textures_delta.clear();
 
         assert_eq!(delta, Some(0.0));
     }
