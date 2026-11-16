@@ -105,8 +105,8 @@ mod tests {
         assert!(visual.contains("UI"));
         assert!(visual.contains("1.0"));
         assert!(
-            visual.starts_with("1.0"),
-            "RTL paragraph visual order: {visual:?}"
+            visual.starts_with("Faseela"),
+            "LTR run should remain readable in visual order: {visual:?}"
         );
     }
 
@@ -114,8 +114,14 @@ mod tests {
     fn paragraph_base_direction_comes_from_first_strong_character() {
         let arabic_first = display_text("العربية Faseela 123");
         let latin_first = display_text("Faseela العربية 123");
-        assert!(arabic_first.starts_with("123"), "{arabic_first:?}");
+        // In visual left-to-right order, the LTR run is placed before the
+        // Arabic run in an RTL paragraph. A paragraph beginning with Latin
+        // keeps its trailing numeric run at the visual end.
+        assert!(arabic_first.starts_with("Faseela"), "{arabic_first:?}");
         assert!(latin_first.starts_with("Faseela"), "{latin_first:?}");
+        assert!(arabic_first.ends_with("ﺔﻴﺑﺮﻌﻟﺍ"), "{arabic_first:?}");
+        assert!(latin_first.ends_with("123"), "{latin_first:?}");
+        assert_ne!(arabic_first, latin_first);
     }
 
     #[test]
