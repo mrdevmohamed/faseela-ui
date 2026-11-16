@@ -265,6 +265,57 @@ mod tests {
         }
     }
 
+    fn missing_glyphs(
+        font: &'static [u8],
+        characters: impl IntoIterator<Item = char>,
+    ) -> Vec<char> {
+        let face = ttf_parser::Face::parse(font, 0).expect("bundled font must parse");
+        characters
+            .into_iter()
+            .filter(|character| face.glyph_index(*character).is_none())
+            .collect()
+    }
+
+    #[test]
+    fn noto_sans_arabic_covers_core_arabic_ui_characters() {
+        let required = ('\u{0621}'..='\u{063A}') // hamza..ghain
+            .chain('\u{0641}'..='\u{064A}') // feh..yeh
+            .chain('\u{064B}'..='\u{0652}') // harakat
+            .chain('\u{0660}'..='\u{0669}') // Arabic-Indic digits
+            .chain(['\u{060C}', '\u{061B}', '\u{061F}']); // comma, semicolon, question mark
+
+        assert_eq!(
+            missing_glyphs(uzor_fonts::NOTO_SANS_ARABIC, required),
+            Vec::<char>::new()
+        );
+    }
+
+    #[test]
+    fn noto_sans_arabic_covers_persian_and_urdu_additions() {
+        let required = [
+            '\u{067E}', // peh
+            '\u{0686}', // tcheh
+            '\u{0698}', // jeh
+            '\u{06A9}', // keheh
+            '\u{06AF}', // gaf
+            '\u{06CC}', // farsi yeh
+            '\u{06F0}', '\u{06F9}', // extended Arabic-Indic digits
+        ];
+
+        assert_eq!(
+            missing_glyphs(uzor_fonts::NOTO_SANS_ARABIC, required),
+            Vec::<char>::new()
+        );
+    }
+
+    #[test]
+    fn dejavu_fallback_covers_printable_ascii() {
+        assert_eq!(
+            missing_glyphs(dejavu::sans::regular(), ' '..='~'),
+            Vec::<char>::new()
+        );
+    }
+
     #[test]
     fn every_preset_has_a_stable_label_and_index() {
         assert_eq!(ThemePreset::from_index(3), ThemePreset::Light);

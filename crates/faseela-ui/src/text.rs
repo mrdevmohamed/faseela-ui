@@ -84,7 +84,16 @@ fn display_line(logical_line: &str) -> String {
 
     let mut output = String::with_capacity(logical_line.len());
     for visual_index in visual_order {
-        output.push_str(words[visual_index].1);
+        let word = words[visual_index].1;
+        if word_levels[visual_index].is_rtl() {
+            // egui draws every glyph left-to-right, so paired punctuation inside an RTL
+            // run must be swapped here (Unicode Bidi_Mirrored), e.g. "(" becomes ")".
+            output.extend(word.chars().map(|character| {
+                unicode_bidi_mirroring::get_mirrored(character).unwrap_or(character)
+            }));
+        } else {
+            output.push_str(word);
+        }
     }
 
     output
@@ -125,6 +134,53 @@ mod tests {
     fn combining_marks_stay_with_their_arabic_graphemes() {
         let original = "مُحَمَّد";
         assert_eq!(display_text(original), original);
+    }
+
+    #[test]
+    fn brackets_in_rtl_runs_are_mirrored_for_left_to_right_drawing() {
+        assert_eq!(display_text("الإصدار (2.0) متاح"), "متاح (2.0) الإصدار");
+        assert_eq!(display_text("(مرحبا) world"), "world (مرحبا)");
+    }
+
+    #[test]
+    fn brackets_in_ltr_runs_are_not_mirrored() {
+        assert_eq!(display_text("Faseela (UI) 1.0"), "Faseela (UI) 1.0");
+        assert_eq!(display_text("Faseela (UI) العربية"), "Faseela (UI) العربية");
+    }
+
+    #[test]
+    fn numbers_and_currency_words_follow_rtl_reading_order() {
+        assert_eq!(display_text("سعر المنتج 250 جنيه"), "جنيه 250 المنتج سعر");
+        assert_eq!(display_text("العدد ١٢٣ في القائمة"), "القائمة في ١٢٣ العدد");
+    }
+
+    #[test]
+    fn punctuation_stays_attached_to_its_arabic_word() {
+        assert_eq!(
+            display_text("مرحبا، Faseela! كيف الحال؟"),
+            "؟الحال كيف !Faseela ،مرحبا"
+        );
+    }
+
+    #[test]
+    fn latin_file_names_and_paths_keep_their_internal_order() {
+        assert_eq!(
+            display_text("افتح الملف report.pdf الآن"),
+            "الآن report.pdf الملف افتح"
+        );
+        assert_eq!(display_text("ملف: C:\\docs\\a.txt"), "C:\\docs\\a.txt :ملف");
+    }
+
+    #[test]
+    fn hebrew_is_reordered_like_arabic() {
+        assert_eq!(display_text("שלום עולם Faseela"), "Faseela עולם שלום");
+    }
+
+    #[test]
+    fn empty_and_whitespace_only_input_is_preserved() {
+        assert_eq!(display_text(""), "");
+        assert_eq!(display_text("   "), "   ");
+        assert_eq!(display_text("\n"), "\n");
     }
 
     #[test]
