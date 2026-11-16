@@ -22,3 +22,6 @@ This repository is not a fork and does not imply endorsement by the Craft/ArtCra
 - `crates/faseela-ui/src/icons.rs` adapts Craft's embedded SVG icon catalog. Faseela apps supply their own SVG assets and install egui's SVG loader; this crate only prepares and shares trusted embedded bytes.
 
 - `crates/faseela-ui/src/tabs.rs` adapts Craft's pure tab-width fitting algorithms. It intentionally excludes tab painting, drag interactions, dialog behavior, and application-owned overflow menus so the layout logic remains independent.
+
+- `crates/faseela-ui/src/direction.rs` is a Faseela-owned implementation of reading-direction primitives informed by Craft's `direction` module. It does not import `craft-i18n` or Craft's egui fork. Applications resolve a language preference and explicitly apply the resulting direction to their egui context.
+- `crates/faseela-ui/src/tabs.rs` now also includes a caller-painted accessible `Tab` interaction primitive. It intentionally omits Craft's dialog tab style and application-specific docking/drag policy.
