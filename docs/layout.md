@@ -47,8 +47,8 @@ The original sizing mode is retained. For example, a ratio remains a ratio and a
 The interactive ResizeHandle widget handles pointer dragging, axis-appropriate arrow keys, focus lifecycle, and AccessKit splitter actions. It still does not mutate application state: apply the returned delta through the split layout and persist the resulting SplitSize.
 
 ```rust
-use egui::{Id, RangeInclusive};
-use faseela_ui::layout::{ResizeHandle, ResizeHandleStyle};
+use egui::Id;
+use faseela_ui::layout::{ResizeHandle, ResizeHandleStyle, SplitAxis};
 
 let resize = ResizeHandle::new(
     Id::new("workspace-split"),
