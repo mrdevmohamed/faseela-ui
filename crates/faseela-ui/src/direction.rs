@@ -7,7 +7,7 @@
 use egui::{Align, Context, Id, Key, Layout, Rect, Ui, Vec2};
 
 fn direction_id() -> Id {
-    Id::new("faseela_ui::direction")
+    Id::unique("faseela_ui::direction")
 }
 
 /// Reading direction of the application chrome and directional controls.
