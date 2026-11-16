@@ -47,12 +47,13 @@ fn display_line(logical_line: &str) -> String {
             BidiClass::L => Some(Level::ltr()),
             _ => None,
         });
-    let bidi = BidiInfo::new(logical_line, base_level);
+    let paragraph_level = base_level.unwrap_or_else(Level::ltr);
+    let bidi = BidiInfo::new(logical_line, Some(paragraph_level));
 
     // egui shapes each Arabic word right-to-left, but lays words out in logical order.
     // Reorder word-boundary units while leaving every word's characters untouched.
     let words: Vec<(usize, &str)> = logical_line.split_word_bound_indices().collect();
-    let word_levels: Vec<Level> = words
+    let mut word_levels: Vec<Level> = words
         .iter()
         .map(|(byte_index, word)| {
             let level_index = byte_index
@@ -63,6 +64,27 @@ fn display_line(logical_line: &str) -> String {
             bidi.levels[level_index]
         })
         .collect();
+
+    // A whitespace-only segment between two words with the same direction belongs to that
+    // directional run. Keep it at the paragraph level only when the surrounding directions
+    // differ, matching the visual ordering of spaces between mixed-direction words.
+    for index in 0..words.len() {
+        if words[index].1.chars().all(char::is_whitespace) {
+            let previous = (0..index)
+                .rev()
+                .find(|&candidate| !words[candidate].1.chars().all(char::is_whitespace))
+                .map(|candidate| word_levels[candidate]);
+            let next = (index + 1..words.len())
+                .find(|&candidate| !words[candidate].1.chars().all(char::is_whitespace))
+                .map(|candidate| word_levels[candidate]);
+
+            word_levels[index] = match (previous, next) {
+                (Some(previous), Some(next)) if previous == next => previous,
+                _ => paragraph_level,
+            };
+        }
+    }
+
     let visual_order = BidiInfo::reorder_visual(&word_levels);
 
     let mut output = String::with_capacity(logical_line.len());
