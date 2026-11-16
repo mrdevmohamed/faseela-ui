@@ -6,11 +6,11 @@ The project is based on **egui** and is designed to keep application logic separ
 
 ## Current status
 
-This repository is the clean Faseela-owned foundation. The Craft UI extraction is being evaluated and ported in stages; upstream code is not represented as already imported. The first milestone establishes the workspace, palette integration, and a runnable showcase. Subsequent milestones will bring across selected reusable controls, docking/layout pieces, icon handling, font support, and input-direction support after their dependencies and licenses are verified.
+This repository is the clean Faseela-owned foundation. The Craft UI extraction is being evaluated and ported in stages; upstream code is not represented as already imported. The first milestone establishes the workspace, palette integration, and a runnable showcase. Selected reusable controls, SVG icon handling, tab sizing and interaction primitives, and explicit LTR/RTL direction helpers are now implemented. Larger docking/layout systems and font infrastructure remain under evaluation.
 
 ## Workspace
 
-- `crates/faseela-ui`: shared widgets and design foundations.
+- `crates/faseela-ui`: shared widgets and design foundations, including buttons, icons, tabs, RTL helpers, and theme tokens.
 - `examples/showcase`: executable preview app.
 
 ## Quick start
@@ -21,7 +21,7 @@ faseela-ui = { git = "https://github.com/mrdevmohamed/faseela-ui" }
 ```
 
 ```rust
-faseela_ui::theme::apply_dark(&ctx);
+faseela_ui::theme::apply_dark(&ctx);\nfaseela_ui::direction::apply(&ctx, faseela_ui::direction::Direction::Rtl);
 ```
 
 ## Design principles
