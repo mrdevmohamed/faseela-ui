@@ -39,7 +39,7 @@ pub fn install_arabic_font(ctx: &Context) {
     for family in [FontFamily::Proportional, FontFamily::Monospace] {
         fonts
             .families
-            .entry(family)
+            .entry(family.clone())
             .or_default()
             .push(arabic_name.clone());
         fonts
