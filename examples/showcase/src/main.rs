@@ -321,7 +321,8 @@ impl Showcase {
 
     fn stat_card(&self, ui: &mut egui::Ui, title: &str, value: &str, detail: &str) {
         egui::Frame::group(ui.style()).show(ui, |ui| {
-            ui.set_min_width(egui::vec2(104.0, 76.0));
+            ui.set_min_width(104.0);
+            ui.set_min_height(76.0);
             ui.label(
                 egui::RichText::new(title)
                     .small()
