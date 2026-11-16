@@ -319,9 +319,8 @@ impl Showcase {
             // display_text has already put short RTL labels in visual word order.
             // Keep the widget in a normal LTR allocation and align its text inside a full-width
             // rectangle; anchoring the widget itself at the right edge makes the text overflow.
-            let arabic_line = text::display_text(
-                "مرحبًا بك في واجهة فسيلة. الحروف العربية متصلة الآن.",
-            );
+            let arabic_line =
+                text::display_text("مرحبًا بك في واجهة فسيلة. الحروف العربية متصلة الآن.");
             ui.add_sized(
                 egui::vec2(ui.available_width().max(0.0), ui.spacing().interact_size.y),
                 egui::Label::new(
