@@ -4,7 +4,7 @@
 //! presentation boundary; never store, search, edit, or copy its visual-order result.
 
 use arabic::{Direction as ArabicDirection, reshape};
-use unicode_bidi::{bidi_class, BidiClass, BidiInfo, Level};
+use unicode_bidi::{BidiClass, BidiInfo, Level, bidi_class};
 use unicode_segmentation::UnicodeSegmentation;
 
 /// Shape Arabic joining forms and reorder mixed RTL/LTR text for egui's left-to-right renderer.
@@ -104,7 +104,10 @@ mod tests {
         assert!(visual.contains("Faseela"));
         assert!(visual.contains("UI"));
         assert!(visual.contains("1.0"));
-        assert!(visual.starts_with("1.0"), "RTL paragraph visual order: {visual:?}");
+        assert!(
+            visual.starts_with("1.0"),
+            "RTL paragraph visual order: {visual:?}"
+        );
     }
 
     #[test]
