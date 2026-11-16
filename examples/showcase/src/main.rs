@@ -70,112 +70,206 @@ struct Showcase {
 
 impl eframe::App for Showcase {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        let screen_width = ui.available_width();
-        let is_mobile = screen_width < 560.0;
-        let outer_padding = if is_mobile { 14.0 } else { 28.0 };
+        let available = ui.available_size();
+        let is_mobile = available.x < 680.0;
+        ui.set_min_size(available);
 
-        egui::ScrollArea::vertical()
-            .auto_shrink([false, false])
-            .show(ui, |ui| {
-                ui.add_space(outer_padding);
+        if is_mobile {
+            self.mobile_shell(ui, available);
+        } else {
+            self.desktop_shell(ui, available);
+        }
+    }
+}
 
-                ui.horizontal(|ui| {
-                    ui.heading(egui::RichText::new("Faseela").size(if is_mobile {
-                        26.0
-                    } else {
-                        32.0
-                    }));
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(
-                            egui::RichText::new("UI PREVIEW")
-                                .size(10.0)
-                                .strong()
-                                .color(palette::PRIMARY_LIGHT),
-                        );
-                    });
-                });
-                ui.label(
-                    egui::RichText::new("A living interface system")
-                        .size(if is_mobile { 13.0 } else { 15.0 })
-                        .color(palette::PRIMARY_LIGHT),
-                );
-                ui.add_space(if is_mobile { 18.0 } else { 26.0 });
-
-                direction::apply(
-                    ui.ctx(),
-                    if self.rtl {
-                        Direction::Rtl
-                    } else {
-                        Direction::Ltr
-                    },
-                );
-
-                let tab_width = if is_mobile {
-                    ((screen_width - outer_padding * 2.0 - 12.0) / 3.0).clamp(88.0, 112.0)
-                } else {
-                    132.0
-                };
-                ui.horizontal_wrapped(|ui| {
-                    for (index, label) in
-                        ["Overview", "Appearance", "Preferences"].iter().enumerate()
-                    {
-                        let (rect, _) = ui
-                            .allocate_exact_size(egui::vec2(tab_width, 42.0), egui::Sense::hover());
-                        let response = Tab::new(
-                            ui.make_persistent_id(("main-tab", index)),
-                            label,
-                            index == self.selected_tab,
-                        )
-                        .show_at(ui, rect, |ui, response| {
-                            let fill = if index == self.selected_tab {
-                                palette::PRIMARY
-                            } else if response.hovered() {
-                                palette::PRIMARY_LIGHT
-                            } else {
-                                egui::Color32::from_rgb(0x17, 0x35, 0x2D)
-                            };
-                            ui.painter().rect_filled(rect, 9.0, fill);
-                            ui.painter().text(
-                                rect.center(),
-                                egui::Align2::CENTER_CENTER,
-                                label,
-                                egui::FontId::proportional(if is_mobile { 11.0 } else { 13.0 }),
-                                if index == self.selected_tab {
-                                    palette::SURFACE
-                                } else {
-                                    palette::PRIMARY_LIGHT
-                                },
-                            );
-                        });
-                        if response.clicked() {
-                            self.selected_tab = index;
-                        }
-                    }
-                });
-
-                ui.add_space(18.0);
-                match self.selected_tab {
-                    0 => self.overview(ui, is_mobile),
-                    1 => self.appearance(ui, is_mobile),
-                    _ => self.preferences(ui, is_mobile),
-                }
-
-                ui.add_space(outer_padding);
-                ui.separator();
-                ui.horizontal_wrapped(|ui| {
+impl Showcase {
+    fn mobile_shell(&mut self, ui: &mut egui::Ui, available: egui::Vec2) {
+        ui.vertical(|ui| {
+            ui.set_min_size(available);
+            ui.horizontal(|ui| {
+                ui.heading(egui::RichText::new("Faseela").size(25.0));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.label(
-                        egui::RichText::new("Faseela UI")
+                        egui::RichText::new("LIVE PREVIEW")
+                            .size(9.0)
                             .strong()
                             .color(palette::PRIMARY_LIGHT),
                     );
-                    ui.label(
-                        egui::RichText::new("Rust · egui · WebAssembly")
-                            .small()
-                            .color(egui::Color32::GRAY),
-                    );
                 });
-                ui.add_space(outer_padding);
             });
+            ui.label(
+                egui::RichText::new("Your workspace, running in WebAssembly")
+                    .size(12.0)
+                    .color(palette::PRIMARY_LIGHT),
+            );
+            ui.add_space(10.0);
+
+            let content_height = (ui.available_height() - 62.0).max(120.0);
+            ui.allocate_ui_with_layout(
+                egui::vec2(ui.available_width(), content_height),
+                egui::Layout::top_down(egui::Align::Min),
+                |ui| {
+                    egui::ScrollArea::vertical()
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| self.page_content(ui, true));
+                },
+            );
+
+            ui.separator();
+            ui.horizontal(|ui| {
+                for (index, label) in ["Home", "Appearance", "Settings"].iter().enumerate() {
+                    let selected = self.selected_tab == index;
+                    let fill = if selected {
+                        palette::PRIMARY
+                    } else {
+                        palette::BACKGROUND
+                    };
+                    let response = ui.add_sized(
+                        egui::vec2(ui.available_width() / (3 - index) as f32, 48.0),
+                        egui::Button::new(
+                            egui::RichText::new(*label).size(11.0).color(if selected {
+                                palette::SURFACE
+                            } else {
+                                palette::PRIMARY_LIGHT
+                            }),
+                        )
+                        .fill(fill)
+                        .stroke(egui::Stroke::NONE),
+                    );
+                    if response.clicked() {
+                        self.selected_tab = index;
+                    }
+                }
+            });
+        });
+    }
+
+    fn desktop_shell(&mut self, ui: &mut egui::Ui, available: egui::Vec2) {
+        ui.horizontal(|ui| {
+            ui.allocate_ui_with_layout(
+                egui::vec2(218.0, available.y),
+                egui::Layout::top_down(egui::Align::Min),
+                |ui| {
+                    egui::Frame::group(ui.style())
+                        .fill(palette::BACKGROUND)
+                        .show(ui, |ui| {
+                            ui.set_min_width(190.0);
+                            ui.set_min_height(available.y - 12.0);
+                            ui.add_space(12.0);
+                            ui.heading(egui::RichText::new("Faseela").size(25.0));
+                            ui.label(
+                                egui::RichText::new("UI WORKSPACE")
+                                    .small()
+                                    .color(palette::PRIMARY_LIGHT),
+                            );
+                            ui.add_space(28.0);
+                            for (index, label) in
+                                ["Overview", "Appearance", "Preferences"].iter().enumerate()
+                            {
+                                let selected = self.selected_tab == index;
+                                let response = ui.add_sized(
+                                    egui::vec2(ui.available_width(), 44.0),
+                                    egui::Button::new(
+                                        egui::RichText::new(*label).color(if selected {
+                                            palette::SURFACE
+                                        } else {
+                                            palette::TEXT
+                                        }),
+                                    )
+                                    .fill(if selected {
+                                        palette::PRIMARY
+                                    } else {
+                                        palette::BACKGROUND
+                                    })
+                                    .stroke(egui::Stroke::NONE),
+                                );
+                                if response.clicked() {
+                                    self.selected_tab = index;
+                                }
+                                ui.add_space(5.0);
+                            }
+                            ui.with_layout(
+                                egui::Layout::bottom_up(egui::Align::Min),
+                                |ui| {
+                                    ui.label(
+                                        egui::RichText::new("Rust · egui · WebAssembly")
+                                            .small()
+                                            .color(egui::Color32::GRAY),
+                                    );
+                                    ui.label(
+                                        egui::RichText::new("Faseela UI 0.1")
+                                            .small()
+                                            .color(palette::PRIMARY_LIGHT),
+                                    );
+                                },
+                            );
+                        });
+                },
+            );
+
+            ui.separator();
+            ui.allocate_ui_with_layout(
+                egui::vec2((available.x - 232.0).max(260.0), available.y),
+                egui::Layout::top_down(egui::Align::Min),
+                |ui| {
+                    ui.horizontal(|ui| {
+                        ui.heading(match self.selected_tab {
+                            0 => "Overview",
+                            1 => "Appearance",
+                            _ => "Preferences",
+                        });
+                        ui.with_layout(
+                            egui::Layout::right_to_left(egui::Align::Center),
+                            |ui| {
+                                ui.label(
+                                    egui::RichText::new("INTERACTIVE SHOWCASE")
+                                        .small()
+                                        .strong()
+                                        .color(palette::PRIMARY_LIGHT),
+                                );
+                            },
+                        );
+                    });
+                    ui.separator();
+                    egui::ScrollArea::vertical()
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| self.page_content(ui, false));
+                },
+            );
+        });
+    }
+
+    fn page_content(&mut self, ui: &mut egui::Ui, is_mobile: bool) {
+        direction::apply(
+            ui.ctx(),
+            if self.rtl {
+                Direction::Rtl
+            } else {
+                Direction::Ltr
+            },
+        );
+
+        match self.selected_tab {
+            0 => self.overview(ui, is_mobile),
+            1 => self.appearance(ui, is_mobile),
+            _ => self.preferences(ui, is_mobile),
+        }
+
+        ui.add_space(18.0);
+        ui.separator();
+        ui.horizontal_wrapped(|ui| {
+            ui.label(
+                egui::RichText::new("Faseela UI")
+                    .strong()
+                    .color(palette::PRIMARY_LIGHT),
+            );
+            ui.label(
+                egui::RichText::new("A real Rust application · compiled to WebAssembly")
+                    .small()
+                    .color(egui::Color32::GRAY),
+            );
+        });
+        ui.add_space(20.0);
     }
 }
 
