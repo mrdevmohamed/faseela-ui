@@ -65,12 +65,22 @@ fn display_line(logical_line: &str) -> String {
         })
         .collect();
 
-    // Treat whitespace-only tokens as paragraph separators instead of joining adjacent
-    // Latin words and European numbers into a single run. This keeps numeric segments in
-    // the visual order expected by egui while leaving every token's characters untouched.
-    for (index, (_, word)) in words.iter().enumerate() {
-        if word.chars().all(char::is_whitespace) {
-            word_levels[index] = paragraph_level;
+    // Keep integer-only tokens at the paragraph boundary in RTL paragraphs. Decimal
+    // numbers remain attached to their preceding Latin run (for example, "UI 1.0").
+    // egui receives the words in visual order but still shapes each word itself.
+    if paragraph_level == Level::rtl() {
+        for (index, (_, word)) in words.iter().enumerate() {
+            if word.chars().all(char::is_whitespace) {
+                let next_is_integer = words
+                    .get(index + 1)
+                    .is_some_and(|(_, next)| {
+                        !next.is_empty() && next.chars().all(|character| character.is_ascii_digit())
+                    });
+
+                if next_is_integer {
+                    word_levels[index] = paragraph_level;
+                }
+            }
         }
     }
 
