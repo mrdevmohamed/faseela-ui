@@ -75,7 +75,11 @@ impl eframe::App for Showcase {
             ui.add_space(12.0);
 
             if ui
-                .button(if self.rtl { "Switch to LTR" } else { "Switch to RTL" })
+                .button(if self.rtl {
+                    "Switch to LTR"
+                } else {
+                    "Switch to RTL"
+                })
                 .clicked()
             {
                 self.rtl = !self.rtl;
@@ -99,10 +103,8 @@ impl eframe::App for Showcase {
             ui.heading("Tabs");
             ui.horizontal(|ui| {
                 for (index, label) in ["General", "Appearance", "Keyboard"].iter().enumerate() {
-                    let (rect, _) = ui.allocate_exact_size(
-                        egui::vec2(112.0, 36.0),
-                        egui::Sense::hover(),
-                    );
+                    let (rect, _) =
+                        ui.allocate_exact_size(egui::vec2(112.0, 36.0), egui::Sense::hover());
                     let response = Tab::new(
                         egui::Id::new(("showcase-tab", index)),
                         label,
@@ -174,14 +176,10 @@ impl eframe::App for Showcase {
                 corner_radius: egui::CornerRadius::same(8),
                 focus_stroke: egui::Stroke::new(1.0, palette::ACCENT),
             };
-            let response = IconButton::new(
-                "Example icon action",
-                egui::vec2(40.0, 40.0),
-                &style,
-            )
-            .show(ui, |ui, rect, tint| {
-                ui.painter().circle_filled(rect.center(), 8.0, tint);
-            });
+            let response = IconButton::new("Example icon action", egui::vec2(40.0, 40.0), &style)
+                .show(ui, |ui, rect, tint| {
+                    ui.painter().circle_filled(rect.center(), 8.0, tint);
+                });
 
             if response.clicked() {
                 self.icon_activated = !self.icon_activated;
