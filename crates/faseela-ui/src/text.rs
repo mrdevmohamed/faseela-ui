@@ -58,7 +58,9 @@ fn display_line(logical_line: &str) -> String {
         let (byte_index, cluster) = clusters[visual_index];
         if bidi.levels[byte_index].is_rtl() {
             for character in cluster.chars() {
-                output.push(unicode_bidi_mirroring::get_mirrored(character).unwrap_or(character));
+                output.push(
+                    unicode_bidi_mirroring::get_mirrored(character).unwrap_or(character),
+                );
             }
         } else {
             output.push_str(cluster);
