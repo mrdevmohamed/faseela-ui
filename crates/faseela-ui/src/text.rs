@@ -71,11 +71,9 @@ fn display_line(logical_line: &str) -> String {
     if paragraph_level == Level::rtl() {
         for (index, (_, word)) in words.iter().enumerate() {
             if word.chars().all(char::is_whitespace) {
-                let next_is_integer = words
-                    .get(index + 1)
-                    .is_some_and(|(_, next)| {
-                        !next.is_empty() && next.chars().all(|character| character.is_ascii_digit())
-                    });
+                let next_is_integer = words.get(index + 1).is_some_and(|(_, next)| {
+                    !next.is_empty() && next.chars().all(|character| character.is_ascii_digit())
+                });
 
                 if next_is_integer {
                     word_levels[index] = paragraph_level;
