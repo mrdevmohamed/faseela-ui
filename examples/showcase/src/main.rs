@@ -22,16 +22,23 @@ mod web {
     use wasm_bindgen::prelude::*;
 
     #[wasm_bindgen(start)]
-    pub async fn start() -> Result<(), JsValue> {
+    pub fn start() -> Result<(), JsValue> {
         let document = web_sys::window().and_then(|w| w.document())
             .ok_or_else(|| JsValue::from_str("browser document is unavailable"))?;
         let canvas = document.get_element_by_id("faseela-ui-canvas")
             .ok_or_else(|| JsValue::from_str("showcase canvas was not found"))?
             .dyn_into::<web_sys::HtmlCanvasElement>()?;
-        eframe::WebRunner::new().start(canvas, eframe::WebOptions::default(), Box::new(|cc| {
-            theme::apply_dark(&cc.egui_ctx);
-            Ok(Box::<Showcase>::default())
-        })).await
+        wasm_bindgen_futures::spawn_local(async move {
+            if let Err(error) = eframe::WebRunner::new()
+                .start(canvas, eframe::WebOptions::default(), Box::new(|cc| {
+                    theme::apply_dark(&cc.egui_ctx);
+                    Ok(Box::<Showcase>::default())
+                })).await
+            {
+                web_sys::console::error_1(&JsValue::from_str(&format!("Faseela UI failed to start: {error:?}")));
+            }
+        });
+        Ok(())
     }
 }
 
@@ -61,7 +68,7 @@ impl eframe::App for Showcase {
             ui.add_space(16.0);
             ui.separator();
             ui.heading("Tabs");
-            ui.horizontal(ui, |ui| {
+            ui.horizontal(|ui| {
                 for (index, label) in ["General", "Appearance", "Keyboard"].iter().enumerate() {
                     let (rect, _) = ui.allocate_exact_size(egui::vec2(112.0, 36.0), egui::Sense::hover());
                     let response = Tab::new(egui::Id::new(("showcase-tab", index)), label, index == self.selected_tab)
