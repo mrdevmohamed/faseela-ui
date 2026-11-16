@@ -177,7 +177,7 @@ fn clamp_first(wanted: f64, available: f64, minimum: f32) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use egui::{Pos2, Rect, Vec2, pos2, vec2};
+    use egui::{Pos2, Vec2, pos2, vec2};
 
     fn sample() -> Rect {
         Rect::from_min_max(pos2(10.0, 20.0), pos2(410.0, 220.0))
