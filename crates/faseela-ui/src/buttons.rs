@@ -88,7 +88,11 @@ impl<'a> IconButton<'a> {
             && self.size.y <= 4096.0;
         let (rect, response) = ui.allocate_exact_size(
             if valid { self.size } else { Vec2::ZERO },
-            if valid { Sense::click() } else { Sense::hover() },
+            if valid {
+                Sense::click()
+            } else {
+                Sense::hover()
+            },
         );
         response.widget_info(|| {
             egui::WidgetInfo::selected(
@@ -183,10 +187,7 @@ mod tests {
 
     #[test]
     fn selected_visuals_take_precedence_over_hover_and_press() {
-        assert_eq!(
-            style().visuals(true, true, true),
-            visuals(Color32::YELLOW)
-        );
+        assert_eq!(style().visuals(true, true, true), visuals(Color32::YELLOW));
     }
 
     #[test]
