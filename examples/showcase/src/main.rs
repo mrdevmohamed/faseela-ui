@@ -27,7 +27,10 @@ impl eframe::App for Showcase {
             ui.add_space(12.0);
             ui.horizontal(|ui| {
                 ui.label("Primary color");
-                let (rect, _) = ui.allocate_exact_size(egui::vec2(72.0, 28.0), egui::Sense::hover());
+                let (rect, _) = ui.allocate_exact_size(
+                    egui::vec2(72.0, 28.0),
+                    egui::Sense::hover(),
+                );
                 ui.painter().rect_filled(rect, 6.0, palette::PRIMARY);
             });
 
@@ -51,7 +54,11 @@ impl eframe::App for Showcase {
                 corner_radius: egui::CornerRadius::same(8),
                 focus_stroke: egui::Stroke::new(1.0, palette::ACCENT),
             };
-            let response = IconButton::new("Example icon action", egui::vec2(40.0, 40.0), &button_style)
+            let response = IconButton::new(
+                "Example icon action",
+                egui::vec2(40.0, 40.0),
+                &button_style,
+            )
                 .show(ui, |ui, rect, tint| {
                     ui.painter().circle_filled(rect.center(), 8.0, tint);
                 });
