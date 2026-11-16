@@ -68,10 +68,16 @@ struct Showcase {
     icon_activated: bool,
     notifications: bool,
     compact_mode: bool,
+    applied_theme: usize,
 }
 
 impl eframe::App for Showcase {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        if self.applied_theme != self.selected_theme {
+            theme::apply_preset(ui.ctx(), theme::ThemePreset::from_index(self.selected_theme));
+            self.applied_theme = self.selected_theme;
+        }
+
         let available = ui.available_size();
         let is_mobile = available.x < 680.0;
         ui.set_min_size(available);
@@ -104,7 +110,7 @@ impl Showcase {
                         egui::RichText::new("LIVE PREVIEW")
                             .size(9.0)
                             .strong()
-                            .color(palette::PRIMARY_LIGHT),
+                            .color(ui.visuals().hyperlink_color),
                     );
                 });
             });
@@ -166,7 +172,7 @@ impl Showcase {
                 egui::Layout::top_down(direction::start_align(ui)),
                 |ui| {
                     egui::Frame::group(ui.style())
-                        .fill(palette::BACKGROUND)
+                        .fill(ui.visuals().panel_fill)
                         .show(ui, |ui| {
                             ui.set_min_width(190.0);
                             ui.set_min_height(available.y - 12.0);
@@ -353,6 +359,7 @@ impl Showcase {
             ui.add_space(8.0);
             let style = self.button_style();
             let response = IconButton::new("Toggle sample action", egui::vec2(46.0, 46.0), &style)
+                .selected(self.icon_activated)
                 .show(ui, |ui, rect, tint| {
                     ui.painter().circle_filled(rect.center(), 9.0, tint);
                 });
@@ -375,12 +382,17 @@ impl Showcase {
             ui.add_space(12.0);
             egui::ComboBox::from_label("Color theme")
                 .width(ui.available_width().min(320.0))
-                .selected_text(["Faseela Dark", "Midnight", "Forest"][self.selected_theme])
+                .selected_text(theme::ThemePreset::from_index(self.selected_theme).label())
                 .show_ui(ui, |ui| {
-                    for (index, name) in ["Faseela Dark", "Midnight", "Forest"].iter().enumerate() {
-                        ui.selectable_value(&mut self.selected_theme, index, *name);
+                    for (index, preset) in theme::ThemePreset::ALL.iter().enumerate() {
+                        ui.selectable_value(&mut self.selected_theme, index, preset.label());
                     }
                 });
+            ui.add_space(8.0);
+            ui.label(format!(
+                "Active theme: {}",
+                theme::ThemePreset::from_index(self.selected_theme).label()
+            ));
             ui.add_space(16.0);
             ui.label("Faseela color palette");
             ui.horizontal_wrapped(|ui| {
