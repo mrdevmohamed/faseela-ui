@@ -44,6 +44,7 @@ mod web {
                     eframe::WebOptions::default(),
                     Box::new(|cc| {
                         theme::apply_dark(&cc.egui_ctx);
+                        theme::install_arabic_font(&cc.egui_ctx);
                         Ok(Box::<Showcase>::default())
                     }),
                 )
@@ -285,6 +286,15 @@ impl Showcase {
                 "Your Faseela workspace"
             });
             ui.label("Explore shared components running as a real interactive application.");
+            ui.add_space(10.0);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+                ui.label(
+                    egui::RichText::new(text::display_text(
+                        "مرحبًا بك في واجهة فسيلة. الحروف العربية متصلة الآن.",
+                    ))
+                    .color(palette::PRIMARY_LIGHT),
+                );
+            });
             ui.add_space(14.0);
             ui.horizontal_wrapped(|ui| {
                 self.stat_card(ui, "Components", "04", "Ready to use");
