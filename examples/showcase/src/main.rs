@@ -3,7 +3,7 @@ use faseela_ui::{
     buttons::{ButtonVisuals, IconButton, IconButtonStyle},
     direction::{self, Direction},
     text,
-    theme::{self, palette, ThemePreset},
+    theme::{self, ThemePreset, palette},
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -152,11 +152,9 @@ impl Showcase {
                     };
                     let response = ui.add_sized(
                         egui::vec2(button_width, 48.0),
-                        egui::Button::new(
-                            egui::RichText::new(*label).size(11.0).color(foreground),
-                        )
-                        .fill(fill)
-                        .stroke(egui::Stroke::NONE),
+                        egui::Button::new(egui::RichText::new(*label).size(11.0).color(foreground))
+                            .fill(fill)
+                            .stroke(egui::Stroke::NONE),
                     );
                     if response.clicked() {
                         self.selected_tab = index;
@@ -389,18 +387,11 @@ impl Showcase {
                 .selected_text(self.selected_theme.label())
                 .show_ui(ui, |ui| {
                     for preset in ThemePreset::ALL {
-                        ui.selectable_value(
-                            &mut self.selected_theme,
-                            preset,
-                            preset.label(),
-                        );
+                        ui.selectable_value(&mut self.selected_theme, preset, preset.label());
                     }
                 });
             ui.add_space(8.0);
-            ui.label(format!(
-                "Active theme: {}",
-                self.selected_theme.label()
-            ));
+            ui.label(format!("Active theme: {}", self.selected_theme.label()));
             ui.add_space(16.0);
             ui.label("Faseela color palette");
             ui.horizontal_wrapped(|ui| {
