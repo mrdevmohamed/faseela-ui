@@ -59,28 +59,32 @@ impl eframe::App for Showcase {
             for (index, label) in ["General", "Appearance", "Keyboard"].iter().enumerate() {
                 let (rect, _) =
                     ui.allocate_exact_size(egui::vec2(112.0, 34.0), egui::Sense::hover());
-                let _response = Tab::new(egui::Id::unique(("showcase-tab", index)), label, index == 0)
-                    .show_at(ui, rect, |ui, response| {
-                        let fill = if index == 0 {
-                            palette::PRIMARY
-                        } else if response.hovered() {
-                            palette::PRIMARY_LIGHT
+                let _response = Tab::new(
+                    egui::Id::unique(("showcase-tab", index)),
+                    label,
+                    index == 0,
+                )
+                .show_at(ui, rect, |ui, response| {
+                    let fill = if index == 0 {
+                        palette::PRIMARY
+                    } else if response.hovered() {
+                        palette::PRIMARY_LIGHT
+                    } else {
+                        egui::Color32::from_rgb(0x17, 0x35, 0x2D)
+                    };
+                    ui.painter().rect_filled(rect, 6.0, fill);
+                    ui.painter().text(
+                        rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        label,
+                        egui::FontId::proportional(13.0),
+                        if index == 0 {
+                            palette::SURFACE
                         } else {
-                            egui::Color32::from_rgb(0x17, 0x35, 0x2D)
-                        };
-                        ui.painter().rect_filled(rect, 6.0, fill);
-                        ui.painter().text(
-                            rect.center(),
-                            egui::Align2::CENTER_CENTER,
-                            label,
-                            egui::FontId::proportional(13.0),
-                            if index == 0 {
-                                palette::SURFACE
-                            } else {
-                                palette::PRIMARY_LIGHT
-                            },
-                        );
-                    });
+                            palette::PRIMARY_LIGHT
+                        },
+                    );
+                });
             }
         });
         ui.add_space(12.0);
