@@ -7,4 +7,4 @@ publish = false
 
 [dependencies]
 faseela-ui = { path = "../../crates/faseela-ui" }
-eframe = { version = "0.31", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
+eframe = { version = "0.37", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
