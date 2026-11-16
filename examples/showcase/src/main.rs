@@ -2,9 +2,7 @@ use eframe::egui;
 use faseela_ui::{
     buttons::{ButtonVisuals, IconButton, IconButtonStyle},
     direction::{self, Direction},
-    layout::{
-        ResizeHandle, ResizeHandleStyle, SplitAxis, SplitSize, fit_toolbar, split_rect,
-    },
+    layout::{ResizeHandle, ResizeHandleStyle, SplitAxis, SplitSize, fit_toolbar, split_rect},
     text,
     theme::{self, ThemePreset, palette},
 };
@@ -407,18 +405,14 @@ impl Showcase {
         egui::Frame::group(ui.style()).show(ui, |ui| {
             ui.set_width(ui.available_width());
             ui.heading("Responsive layout");
-            ui.label(
-                "Drag the divider, or focus it and use the arrow keys to resize the panes.",
-            );
+            ui.label("Drag the divider, or focus it and use the arrow keys to resize the panes.");
             ui.add_space(8.0);
 
             let width = ui.available_width().max(0.0);
             let (outer, _) = ui.allocate_exact_size(egui::vec2(width, 88.0), egui::Sense::hover());
             let current_size = self.split_size.unwrap_or(SplitSize::Ratio(0.64));
 
-            if let Some(split) =
-                split_rect(outer, SplitAxis::Horizontal, current_size, 8.0, 64.0)
-            {
+            if let Some(split) = split_rect(outer, SplitAxis::Horizontal, current_size, 8.0, 64.0) {
                 // Geometry stays physical; the app maps logical leading/trailing panes for RTL.
                 let (leading, trailing) = if self.rtl {
                     (split.second, split.first)
