@@ -1,8 +1,8 @@
-//! Faseela's initial design tokens and egui style integration.
+//! Faseela design tokens and runtime theme presets.
 
 use egui::{
     Color32, Context, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Margin, Stroke,
-    Style, Visuals,
+    Style, Theme, Visuals,
 };
 use std::sync::Arc;
 
@@ -17,17 +17,44 @@ pub mod palette {
     pub const SURFACE: Color32 = Color32::from_rgb(0xE8, 0xF7, 0xEE);
 }
 
+/// Built-in appearance presets exposed by the shared UI.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ThemePreset {
+    #[default]
+    FaseelaDark,
+    Midnight,
+    Forest,
+    Light,
+}
+
+impl ThemePreset {
+    pub const ALL: [Self; 4] = [Self::FaseelaDark, Self::Midnight, Self::Forest, Self::Light];
+
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::FaseelaDark => "Faseela Dark",
+            Self::Midnight => "Midnight",
+            Self::Forest => "Forest",
+            Self::Light => "Light",
+        }
+    }
+
+    pub const fn from_index(index: usize) -> Self {
+        match index {
+            1 => Self::Midnight,
+            2 => Self::Forest,
+            3 => Self::Light,
+            _ => Self::FaseelaDark,
+        }
+    }
+}
+
 /// Install bundled Arabic and broad-Unicode fallback fonts for UI text.
-///
-/// Noto Sans Arabic is placed before DejaVu Sans in both proportional and monospace fallback
-/// chains. This resets font definitions to egui's defaults plus these two faces. Call it during
-/// application startup, after any custom font setup that should be replaced by this stack.
 pub fn install_arabic_font(ctx: &Context) {
     let mut fonts = FontDefinitions::default();
     let font_name = "faseela-arabic-fallback".to_owned();
-
-    // Prefer a purpose-built Arabic face before the broad Latin fallback.
     let arabic_name = "faseela-noto-sans-arabic".to_owned();
+
     fonts.font_data.insert(
         arabic_name.clone(),
         Arc::new(FontData::from_static(uzor_fonts::NOTO_SANS_ARABIC)),
@@ -53,24 +80,70 @@ pub fn install_arabic_font(ctx: &Context) {
     ctx.set_fonts(fonts);
 }
 
-/// Applies the initial dark Faseela visual language to an egui context.
-pub fn apply_dark(ctx: &Context) {
+/// Apply a complete theme preset. Call again whenever the selected preset changes.
+pub fn apply_preset(ctx: &Context, preset: ThemePreset) {
     let mut style = Style::default();
-    let mut visuals = Visuals::dark();
+    let mut visuals = match preset {
+        ThemePreset::Light => Visuals::light(),
+        _ => Visuals::dark(),
+    };
 
-    visuals.panel_fill = palette::BACKGROUND;
-    visuals.window_fill = Color32::from_rgb(0x10, 0x2A, 0x25);
-    visuals.extreme_bg_color = Color32::from_rgb(0x06, 0x14, 0x12);
-    visuals.faint_bg_color = Color32::from_rgb(0x17, 0x35, 0x2D);
-    visuals.selection.bg_fill = palette::PRIMARY;
-    visuals.selection.stroke = Stroke::new(1.0, palette::PRIMARY_LIGHT);
-    visuals.hyperlink_color = palette::PRIMARY_LIGHT;
-    visuals.warn_fg_color = palette::ACCENT;
-    visuals.widgets.noninteractive.bg_fill = Color32::from_rgb(0x10, 0x2A, 0x25);
-    visuals.widgets.inactive.bg_fill = Color32::from_rgb(0x17, 0x35, 0x2D);
-    visuals.widgets.hovered.bg_fill = Color32::from_rgb(0x20, 0x4B, 0x3B);
-    visuals.widgets.active.bg_fill = palette::PRIMARY;
-    visuals.widgets.open.bg_fill = Color32::from_rgb(0x17, 0x35, 0x2D);
+    let (background, panel, surface, primary, accent, text_accent) = match preset {
+        ThemePreset::FaseelaDark => (
+            Color32::from_rgb(0x0A, 0x1D, 0x1A),
+            Color32::from_rgb(0x10, 0x2A, 0x25),
+            Color32::from_rgb(0x17, 0x35, 0x2D),
+            palette::PRIMARY,
+            palette::ACCENT,
+            palette::PRIMARY_LIGHT,
+        ),
+        ThemePreset::Midnight => (
+            Color32::from_rgb(0x10, 0x14, 0x26),
+            Color32::from_rgb(0x19, 0x20, 0x38),
+            Color32::from_rgb(0x25, 0x2E, 0x4A),
+            Color32::from_rgb(0x68, 0x75, 0xD9),
+            Color32::from_rgb(0xE7, 0xB9, 0x6A),
+            Color32::from_rgb(0xC0, 0xC7, 0xFF),
+        ),
+        ThemePreset::Forest => (
+            Color32::from_rgb(0x10, 0x24, 0x1C),
+            Color32::from_rgb(0x18, 0x32, 0x26),
+            Color32::from_rgb(0x24, 0x43, 0x31),
+            Color32::from_rgb(0x3D, 0x8B, 0x62),
+            Color32::from_rgb(0xE6, 0xC4, 0x6A),
+            Color32::from_rgb(0xB6, 0xE3, 0xC3),
+        ),
+        ThemePreset::Light => (
+            Color32::from_rgb(0xF4, 0xF7, 0xF5),
+            Color32::from_rgb(0xFF, 0xFF, 0xFF),
+            Color32::from_rgb(0xE8, 0xF0, 0xEB),
+            Color32::from_rgb(0x23, 0x7A, 0x50),
+            Color32::from_rgb(0xA6, 0x6B, 0x00),
+            Color32::from_rgb(0x27, 0x67, 0x49),
+        ),
+    };
+
+    visuals.panel_fill = background;
+    visuals.window_fill = panel;
+    visuals.extreme_bg_color = if preset == ThemePreset::Light {
+        Color32::from_rgb(0xE2, 0xE9, 0xE4)
+    } else {
+        background.gamma_multiply(0.65)
+    };
+    visuals.faint_bg_color = surface;
+    visuals.selection.bg_fill = primary;
+    visuals.selection.stroke = Stroke::new(1.0, text_accent);
+    visuals.hyperlink_color = text_accent;
+    visuals.warn_fg_color = accent;
+    visuals.widgets.noninteractive.bg_fill = panel;
+    visuals.widgets.inactive.bg_fill = surface;
+    visuals.widgets.hovered.bg_fill = surface.gamma_multiply(if preset == ThemePreset::Light {
+        0.94
+    } else {
+        1.2
+    });
+    visuals.widgets.active.bg_fill = primary;
+    visuals.widgets.open.bg_fill = surface;
     visuals.window_corner_radius = CornerRadius::same(10);
     visuals.menu_corner_radius = CornerRadius::same(8);
 
@@ -81,8 +154,19 @@ pub fn apply_dark(ctx: &Context) {
     style
         .text_styles
         .insert(egui::TextStyle::Heading, FontId::proportional(24.0));
-    ctx.set_style_of(egui::Theme::Dark, style);
-    ctx.set_theme(egui::Theme::Dark);
+
+    let egui_theme = if preset == ThemePreset::Light {
+        Theme::Light
+    } else {
+        Theme::Dark
+    };
+    ctx.set_style_of(egui_theme, style);
+    ctx.set_theme(egui_theme);
+}
+
+/// Backwards-compatible shortcut for the default Faseela dark theme.
+pub fn apply_dark(ctx: &Context) {
+    apply_preset(ctx, ThemePreset::FaseelaDark);
 }
 
 #[cfg(test)]
@@ -93,8 +177,24 @@ mod tests {
     fn applies_faseela_palette() {
         let ctx = Context::default();
         apply_dark(&ctx);
-        let visuals = ctx.style_of(egui::Theme::Dark).visuals.clone();
+        let visuals = ctx.style_of(Theme::Dark).visuals.clone();
         assert_eq!(visuals.panel_fill, palette::BACKGROUND);
         assert_eq!(visuals.selection.bg_fill, palette::PRIMARY);
+    }
+
+    #[test]
+    fn light_preset_uses_light_visuals_and_background() {
+        let ctx = Context::default();
+        apply_preset(&ctx, ThemePreset::Light);
+        let visuals = ctx.style_of(Theme::Light).visuals.clone();
+        assert_eq!(visuals.panel_fill, Color32::from_rgb(0xF4, 0xF7, 0xF5));
+        assert_eq!(visuals.widgets.noninteractive.bg_fill, Color32::WHITE);
+    }
+
+    #[test]
+    fn every_preset_has_a_stable_label_and_index() {
+        assert_eq!(ThemePreset::from_index(3), ThemePreset::Light);
+        assert_eq!(ThemePreset::Light.label(), "Light");
+        assert_eq!(ThemePreset::ALL.len(), 4);
     }
 }
