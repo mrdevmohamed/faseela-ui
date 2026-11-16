@@ -53,7 +53,7 @@ mod tests {
     fn applies_faseela_palette() {
         let ctx = Context::default();
         apply_dark(&ctx);
-        let visuals = ctx.style().visuals.clone();
+        let visuals = ctx.style_of(egui::Theme::Dark).visuals.clone();
         assert_eq!(visuals.panel_fill, palette::BACKGROUND);
         assert_eq!(visuals.selection.bg_fill, palette::PRIMARY);
     }
