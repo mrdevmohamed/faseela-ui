@@ -168,7 +168,12 @@ mod tests {
                 overflow_width: 20.0,
             })
         );
-        assert!(fit_toolbar(&[10.0], 10.0, 4.0, 20.0).unwrap().overflow.is_empty());
+        assert!(
+            fit_toolbar(&[10.0], 10.0, 4.0, 20.0)
+                .unwrap()
+                .overflow
+                .is_empty()
+        );
     }
 
     #[test]
@@ -189,7 +194,10 @@ mod tests {
         assert_eq!(fit_toolbar(&[0.0], 100.0, 4.0, 20.0), None);
         assert_eq!(fit_toolbar(&[24.0], 100.0, 4.0, 0.0), None);
         assert!(fit_toolbar(&vec![24.0; MAX_GROUPS], MAX_EXTENT, 4.0, 20.0).is_some());
-        assert_eq!(fit_toolbar(&vec![24.0; MAX_GROUPS + 1], MAX_EXTENT, 4.0, 20.0), None);
+        assert_eq!(
+            fit_toolbar(&vec![24.0; MAX_GROUPS + 1], MAX_EXTENT, 4.0, 20.0),
+            None
+        );
     }
 
     #[test]
@@ -211,10 +219,17 @@ mod tests {
                 }
 
                 let visible_count = fit.shown.len() + usize::from(!fit.overflow.is_empty());
-                let used = fit.shown.iter().map(|&(_, width)| f64::from(width)).sum::<f64>()
+                let used = fit
+                    .shown
+                    .iter()
+                    .map(|&(_, width)| f64::from(width))
+                    .sum::<f64>()
                     + f64::from(fit.overflow_width)
                     + visible_count.saturating_sub(1) as f64 * f64::from(spacing);
-                assert!(used <= f64::from(available), "{fit:?} uses {used} of {available}");
+                assert!(
+                    used <= f64::from(available),
+                    "{fit:?} uses {used} of {available}"
+                );
             }
         }
     }
