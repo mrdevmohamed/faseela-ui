@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
@@ -27,7 +28,8 @@ jobs:
         with:
           tool: trunk
       - name: Build WebAssembly showcase
-        run: trunk build --release --public-url /faseela-ui/
+        working-directory: examples/showcase
+        run: trunk build --release --public-url /faseela-ui/ --dist ../../dist
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
