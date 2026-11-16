@@ -106,12 +106,7 @@ pub fn fit(
 /// Tabs are shown in input order up to the first one that does not fit beside the selected tab
 /// and the overflow button. The selected tab is always shown in its logical place. A selected
 /// tab wider than the strip minus the button is clipped to the remaining width by its caller.
-pub fn fit_whole(
-    natural: &[f32],
-    selected: usize,
-    available: f32,
-    overflow_width: f32,
-) -> TabFit {
+pub fn fit_whole(natural: &[f32], selected: usize, available: f32, overflow_width: f32) -> TabFit {
     let available = extent(available);
     let natural: Vec<f32> = natural.iter().map(|&width| extent(width)).collect();
 
@@ -156,12 +151,7 @@ pub fn fit_whole(
     }
 }
 
-fn squeeze(
-    natural: &[f32],
-    indices: &[usize],
-    total: f32,
-    minimum: f32,
-) -> Vec<(usize, f32)> {
+fn squeeze(natural: &[f32], indices: &[usize], total: f32, minimum: f32) -> Vec<(usize, f32)> {
     let width = |index: usize| natural.get(index).copied().unwrap_or(0.0);
     let sum_at = |cap: f32| {
         indices
@@ -244,8 +234,19 @@ mod tests {
 
     #[test]
     fn invalid_dimensions_are_sanitized() {
-        let result = fit(&[f32::NAN, -5.0, f32::INFINITY], usize::MAX, 80.0, 30.0, 24.0);
+        let result = fit(
+            &[f32::NAN, -5.0, f32::INFINITY],
+            usize::MAX,
+            80.0,
+            30.0,
+            24.0,
+        );
         assert!(total(&result) <= 80.0);
-        assert!(result.shown.iter().all(|(_, width)| width.is_finite() && *width >= 0.0));
+        assert!(
+            result
+                .shown
+                .iter()
+                .all(|(_, width)| width.is_finite() && *width >= 0.0)
+        );
     }
 }
