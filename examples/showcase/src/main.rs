@@ -20,8 +20,7 @@ fn main() -> eframe::Result<()> {
 struct Showcase;
 
 impl eframe::App for Showcase {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
             ui.heading("Faseela UI");
             ui.label("A shared interface foundation for Faseela applications.");
             ui.add_space(12.0);
@@ -62,6 +61,5 @@ impl eframe::App for Showcase {
             if response.clicked() {
                 ui.label("Icon button activated");
             }
-        });
     }
 }
