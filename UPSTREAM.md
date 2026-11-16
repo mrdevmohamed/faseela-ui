@@ -29,5 +29,5 @@ This repository is not a fork and does not imply endorsement by the Craft/ArtCra
 ## Arabic text rendering
 
 - `crates/faseela-ui/src/text.rs` is Faseela-owned display logic for Arabic contextual shaping and mixed RTL/LTR visual ordering. It uses the `arabic`, `unicode-bidi`, `unicode-segmentation`, and `unicode-bidi-mirroring` crates. Application strings must remain in logical Unicode order; call `text::display_text` only at the rendering boundary.
-- `theme::install_arabic_font` appends an embedded DejaVu Sans font as a fallback for proportional and monospace text. The font is supplied by the `dejavu` crate; its redistribution notices are retained in [LICENSE-DejaVu.txt](LICENSE-DejaVu.txt).
+- `theme::install_arabic_font` installs Noto Sans Arabic before DejaVu Sans for proportional and monospace text. This follows Craft's Noto Sans Arabic-first approach for Arabic UI glyph coverage. Noto Sans Arabic is supplied by `uzor-fonts` (font data under SIL OFL 1.1; see that crate's `NOTICE`); DejaVu Sans is supplied by the `dejavu` crate and its redistribution notices are retained in [LICENSE-DejaVu.txt](LICENSE-DejaVu.txt).
 - The Showcase installs the fallback in both native and WebAssembly startup paths and includes an Arabic sample to exercise the rendering path.
