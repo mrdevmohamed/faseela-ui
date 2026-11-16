@@ -41,7 +41,8 @@ pub fn apply_dark(ctx: &Context) {
     style
         .text_styles
         .insert(egui::TextStyle::Heading, FontId::proportional(24.0));
-    ctx.set_style(style);
+    ctx.set_style_of(egui::Theme::Dark, style);
+    ctx.set_theme(egui::Theme::Dark);
 }
 
 #[cfg(test)]
