@@ -463,13 +463,13 @@ impl Showcase {
             hovered: ButtonVisuals {
                 fill: palette::PRIMARY_LIGHT,
                 stroke: egui::Stroke::NONE,
-                icon: ui.visuals().widgets.inactive.bg_fill,
+                icon: palette::BACKGROUND,
             },
             pressed: None,
             selected: ButtonVisuals {
                 fill: palette::ACCENT,
                 stroke: egui::Stroke::NONE,
-                icon: ui.visuals().widgets.inactive.bg_fill,
+                icon: palette::BACKGROUND,
             },
             corner_radius: egui::CornerRadius::same(9),
             focus_stroke: egui::Stroke::new(1.0, palette::ACCENT),
