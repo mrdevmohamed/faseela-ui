@@ -17,9 +17,10 @@ pub mod palette {
     pub const SURFACE: Color32 = Color32::from_rgb(0xE8, 0xF7, 0xEE);
 }
 
-/// Install a bundled Arabic-capable font as the final fallback for UI text.
+/// Install bundled Arabic and broad-Unicode fallback fonts for UI text.
 ///
-/// This resets the font definitions to egui's defaults plus DejaVu Sans. Call it during
+/// Noto Sans Arabic is placed before DejaVu Sans in both proportional and monospace fallback
+/// chains. This resets font definitions to egui's defaults plus these two faces. Call it during
 /// application startup, after any custom font setup that should be replaced by this stack.
 pub fn install_arabic_font(ctx: &Context) {
     let mut fonts = FontDefinitions::default();
