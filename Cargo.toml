@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mrdevmohamed/faseela-ui"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [workspace.dependencies]
-egui = { version = "0.31", default-features = false }
+egui = { version = "0.37", default-features = false }
