@@ -445,7 +445,6 @@ impl Showcase {
             );
             if let Some(fit) = fit_toolbar(&widths, toolbar_width, 6.0, 42.0) {
                 let overflow_visible = !fit.overflow.is_empty();
-                let visible_items = fit.shown.len() + usize::from(overflow_visible);
                 let mut cursor = if self.rtl {
                     toolbar.right()
                 } else {
