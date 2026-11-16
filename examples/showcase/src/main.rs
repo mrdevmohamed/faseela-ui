@@ -454,7 +454,7 @@ impl Showcase {
                     focused: ui.visuals().selection.bg_fill,
                 };
                 let mut handle = ResizeHandle::new(
-                    egui::Id::new("showcase-workspace-split"),
+                    egui::Id::unique("showcase-workspace-split"),
                     SplitAxis::Horizontal,
                     split.divider,
                     "Resize workspace panes",
@@ -476,11 +476,11 @@ impl Showcase {
                 }
 
                 let resize = handle.show(ui);
-                if resize.delta != 0.0 {
-                    if let Some(next_size) = split.resized(current_size, resize.delta, 64.0) {
-                        self.split_size = Some(next_size);
-                        ui.ctx().request_repaint();
-                    }
+                if resize.delta != 0.0
+                    && let Some(next_size) = split.resized(current_size, resize.delta, 64.0)
+                {
+                    self.split_size = Some(next_size);
+                    ui.ctx().request_repaint();
                 }
             }
 
