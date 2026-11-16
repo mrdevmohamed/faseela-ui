@@ -4,9 +4,7 @@
 
 use std::ops::RangeInclusive;
 
-use egui::{
-    Color32, EventFilter, Id, Key, Modifiers, Rect, Response, Sense, Ui, Vec2, accesskit,
-};
+use egui::{Color32, EventFilter, Id, Key, Modifiers, Rect, Response, Sense, Ui, Vec2, accesskit};
 
 use super::SplitAxis;
 
@@ -215,12 +213,9 @@ impl<'a> ResizeHandle<'a> {
                             ) = (&self.value, &request.data)
                             {
                                 if new_value.is_finite() {
-                                    let requested = new_value.clamp(
-                                        f64::from(*range.start()),
-                                        f64::from(*range.end()),
-                                    );
-                                    set_value_delta =
-                                        Some((requested - f64::from(*value)) as f32);
+                                    let requested = new_value
+                                        .clamp(f64::from(*range.start()), f64::from(*range.end()));
+                                    set_value_delta = Some((requested - f64::from(*value)) as f32);
                                 }
                                 true
                             } else {
@@ -399,7 +394,10 @@ mod tests {
                 },
             );
 
-            (result.expect("the central panel must render the handle"), output)
+            (
+                result.expect("the central panel must render the handle"),
+                output,
+            )
         }
 
         fn settle(&mut self) -> ResizeResponse {
@@ -457,13 +455,11 @@ mod tests {
         let _ = harness.frame(vec![Event::PointerMoved(center)]);
         let _ = harness.frame(vec![pointer(center, true)]);
 
-        let (response, _) =
-            harness.frame(vec![Event::PointerMoved(center + vec2(12.0, 0.0))]);
+        let (response, _) = harness.frame(vec![Event::PointerMoved(center + vec2(12.0, 0.0))]);
         assert!(response.response.dragged());
         assert_eq!(response.delta, 12.0);
 
-        let (response, _) =
-            harness.frame(vec![Event::PointerMoved(center + vec2(16.0, 0.0))]);
+        let (response, _) = harness.frame(vec![Event::PointerMoved(center + vec2(16.0, 0.0))]);
         assert_eq!(response.delta, 4.0);
 
         let (response, _) = harness.frame(vec![pointer(center + vec2(16.0, 0.0), false)]);
