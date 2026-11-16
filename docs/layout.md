@@ -1,12 +1,12 @@
 # Layout primitives
 
-The \`faseela_ui::layout\` module provides small, stateless layout algorithms. It does not own a dock tree, pane state, command model, menu, or pointer gesture.
+The `faseela_ui::layout` module provides small, stateless layout algorithms. It does not own a dock tree, pane state, command model, menu, or pointer gesture.
 
 ## Two-pane geometry
 
-\`split_rect\` divides an egui rectangle into a first pane, divider, and second pane:
+`split_rect` divides an egui rectangle into a first pane, divider, and second pane:
 
-\`\`\`rust
+```rust
 use faseela_ui::layout::{split_rect, SplitAxis, SplitSize};
 
 let split = split_rect(
@@ -20,15 +20,15 @@ let split = split_rect(
 if let Some(split) = split {
     // Paint or lay out content in split.first, split.divider, and split.second.
 }
-\`\`\`
+```
 
 Sizing modes are:
 
-- \`Ratio(f32)\`: fraction of the space after removing the divider, assigned to the first pane.
-- \`FixedFirst(f32)\`: logical-point width or height of the first pane.
-- \`FixedSecond(f32)\`: logical-point width or height of the second pane.
+- `Ratio(f32)`: fraction of the space after removing the divider, assigned to the first pane.
+- `FixedFirst(f32)`: logical-point width or height of the first pane.
+- `FixedSecond(f32)`: logical-point width or height of the second pane.
 
-Finite values outside the available range are clamped. When both pane minimums cannot fit, the minimum is relaxed evenly so neither pane is inverted. A zero-sized rectangle is valid. Invalid geometry, negative/non-finite gaps or minimums, and non-finite size requests return \`None\`.
+Finite values outside the available range are clamped. When both pane minimums cannot fit, the minimum is relaxed evenly so neither pane is inverted. A zero-sized rectangle is valid. Invalid geometry, negative/non-finite gaps or minimums, and non-finite size requests return `None`.
 
 Horizontal geometry places the first rectangle on the left and the second on the right. In an RTL interface, map your logical leading/trailing pane contents to the opposite rectangles; geometry itself does not make assumptions about application semantics.
 
@@ -36,27 +36,27 @@ Horizontal geometry places the first rectangle on the left and the second on the
 
 The helper returns a proposal rather than changing application state:
 
-\`\`\`rust
+```rust
 if let Some(next_size) = split.resized(current_size, drag_delta, 160.0) {
     // Persist next_size in your application model.
 }
-\`\`\`
+```
 
-The original sizing mode is retained. For example, a ratio remains a ratio and a fixed-second request remains a fixed-second request. The drag minimum can be stricter than the minimum used for the current layout. If there is no resizable space or inputs are invalid, the result is \`None\`.
+The original sizing mode is retained. For example, a ratio remains a ratio and a fixed-second request remains a fixed-second request. The drag minimum can be stricter than the minimum used for the current layout. If there is no resizable space or inputs are invalid, the result is `None`.
 
 The caller is responsible for pointer/keyboard input, focus, accessibility, and repainting. This keeps the geometry useful for desktop and WebAssembly applications without forcing a docking framework.
 
 ## Toolbar overflow fitting
 
-\`fit_toolbar\` keeps toolbar groups at their natural widths and returns a leading sequence that fits, together with the remaining indices for an application-owned overflow menu:
+`fit_toolbar` keeps toolbar groups at their natural widths and returns a leading sequence that fits, together with the remaining indices for an application-owned overflow menu:
 
-\`\`\`rust
+```rust
 use faseela_ui::layout::fit_toolbar;
 
 let widths = [56.0, 72.0, 64.0, 48.0];
 if let Some(fit) = fit_toolbar(&widths, available_width, 6.0, 40.0) {
     for (index, width) in fit.shown {
-        // Render group \`index\` at its natural \`width\`.
+        // Render group `index` at its natural `width`.
     }
 
     if !fit.overflow.is_empty() {
@@ -65,11 +65,11 @@ if let Some(fit) = fit_toolbar(&widths, available_width, 6.0, 40.0) {
 } else {
     // Use an explicit fallback such as a scrollable or wrapping toolbar.
 }
-\`\`\`
+```
 
 The algorithm never compresses or skips a group to reveal later groups. It reserves the overflow control and the spacing before it. The caller must expose every returned overflow index through a reachable menu; this library does not hide commands or create that menu.
 
-For a non-empty input, dimensions must be finite, each group width and overflow-control width must be positive, and no dimension may exceed one million logical points. Inputs with more than 4096 groups are rejected. If overflow is required but the control itself cannot fit, the function returns \`None\` so the application can choose an explicit fallback. An empty input returns an empty fit.
+For a non-empty input, dimensions must be finite, each group width and overflow-control width must be positive, and no dimension may exceed one million logical points. Inputs with more than 4096 groups are rejected. If overflow is required but the control itself cannot fit, the function returns `None` so the application can choose an explicit fallback. An empty input returns an empty fit.
 
 ## Scope
 
