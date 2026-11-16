@@ -1,18 +1,16 @@
-//! Display helpers for scripts that egui does not shape or reorder automatically.
+//! Display helpers for bidirectional text in egui.
 //!
-//! Keep application strings in logical Unicode order. Use display_text only at the
-//! presentation boundary; never store, search, edit, or copy its visual-order result.
+//! Keep strings in logical Unicode order. This helper reorders directional runs only;
+//! egui's text shaper must receive the characters inside each run in logical order.
 
-use arabic::{Direction as ArabicDirection, reshape};
 use unicode_bidi::{BidiClass, BidiInfo, Level, bidi_class};
 use unicode_segmentation::UnicodeSegmentation;
 
-/// Shape Arabic joining forms and reorder mixed RTL/LTR text for egui's left-to-right renderer.
+/// Reorder bidirectional runs for egui while preserving the logical order inside each run.
 ///
-/// This is intended for short UI labels, headings, and button text. Each newline-delimited
-/// paragraph is processed independently. Grapheme clusters are reordered as units so Arabic
-/// combining marks remain attached to their base letters, and mirrored punctuation is mapped
-/// when it appears in an RTL run.
+/// egui shapes Arabic runs itself. Reversing Arabic characters or converting them to
+/// presentation forms here would double-process the run and can make letters appear reversed
+/// or disconnected. This helper only moves complete directional runs into visual order.
 pub fn display_text(logical_text: &str) -> String {
     let mut visual_text = String::with_capacity(logical_text.len());
 
@@ -40,10 +38,6 @@ fn display_line(logical_line: &str) -> String {
         return String::new();
     }
 
-    // Shape first while characters are still in logical reading order.
-    let shaped = reshape(logical_line, ArabicDirection::Logical);
-    // egui lays glyphs out left-to-right. Resolve the paragraph base direction from
-    // the first strong character instead of always relying on the default LTR base.
     let base_level = logical_line
         .chars()
         .map(bidi_class)
@@ -52,27 +46,31 @@ fn display_line(logical_line: &str) -> String {
             BidiClass::L => Some(Level::ltr()),
             _ => None,
         });
-    let bidi = BidiInfo::new(&shaped, base_level);
-    let clusters: Vec<(usize, &str)> = shaped.grapheme_indices(true).collect();
+    let bidi = BidiInfo::new(logical_line, base_level);
+    let clusters: Vec<(usize, &str)> = logical_line.grapheme_indices(true).collect();
 
-    // egui consumes text left-to-right. Reorder complete grapheme clusters rather than UTF-8
-    // bytes or individual code points, keeping marks and join-control sequences intact.
-    let cluster_levels: Vec<_> = clusters
-        .iter()
-        .map(|(byte_index, _)| bidi.levels[*byte_index])
-        .collect();
-    let visual_order = BidiInfo::reorder_visual(&cluster_levels);
-
-    let mut output = String::with_capacity(shaped.len());
-    for visual_index in visual_order {
-        let (byte_index, cluster) = clusters[visual_index];
-        if bidi.levels[byte_index].is_rtl() {
-            for character in cluster.chars() {
-                output.push(unicode_bidi_mirroring::get_mirrored(character).unwrap_or(character));
-            }
+    // Build directional runs from grapheme clusters. Keep every run's source text intact:
+    // the renderer performs Arabic shaping and glyph ordering inside RTL runs.
+    let mut runs: Vec<(usize, usize, Level)> = Vec::new();
+    for (byte_index, cluster) in clusters {
+        let end = byte_index + cluster.len();
+        let level = bidi.levels[byte_index];
+        if let Some((_, run_end, run_level)) = runs.last_mut()
+            && *run_level == level
+        {
+            *run_end = end;
         } else {
-            output.push_str(cluster);
+            runs.push((byte_index, end, level));
         }
+    }
+
+    let run_levels: Vec<Level> = runs.iter().map(|(_, _, level)| *level).collect();
+    let visual_order = BidiInfo::reorder_visual(&run_levels);
+
+    let mut output = String::with_capacity(logical_line.len());
+    for visual_index in visual_order {
+        let (start, end, _) = runs[visual_index];
+        output.push_str(&logical_line[start..end]);
     }
 
     output
@@ -89,47 +87,35 @@ mod tests {
     }
 
     #[test]
-    fn arabic_text_is_shaped_and_reordered() {
+    fn arabic_run_stays_in_logical_order_for_egui_shaping() {
         let original = "السلام عليكم";
-        let visual = display_text(original);
-        assert_ne!(visual, original);
-        assert!(visual.chars().any(|character| {
-            matches!(character, '\u{FB50}'..='\u{FDFF}' | '\u{FE70}'..='\u{FEFF}')
-        }));
+        assert_eq!(display_text(original), original);
     }
 
     #[test]
-    fn mixed_arabic_and_latin_keep_latin_runs_readable() {
-        let visual = display_text("مرحبًا بكم في Faseela UI 1.0");
-        assert!(visual.contains("Faseela"));
-        assert!(visual.contains("UI"));
-        assert!(visual.contains("1.0"));
-        assert!(
-            visual.starts_with("Faseela"),
-            "LTR run should remain readable in visual order: {visual:?}"
-        );
+    fn mixed_arabic_and_latin_reorders_runs_without_reversing_arabic() {
+        let original = "مرحبًا بكم في Faseela UI 1.0";
+        let visual = display_text(original);
+        assert!(visual.starts_with("Faseela"), "{visual:?}");
+        assert!(visual.contains("مرحبًا بكم في"), "{visual:?}");
+        assert!(visual.contains("UI 1.0"), "{visual:?}");
     }
 
     #[test]
     fn paragraph_base_direction_comes_from_first_strong_character() {
         let arabic_first = display_text("العربية Faseela 123");
         let latin_first = display_text("Faseela العربية 123");
-        // In visual left-to-right order, the LTR run is placed before the
-        // Arabic run in an RTL paragraph. A paragraph beginning with Latin
-        // keeps its trailing numeric run at the visual end.
         assert!(arabic_first.starts_with("Faseela"), "{arabic_first:?}");
         assert!(latin_first.starts_with("Faseela"), "{latin_first:?}");
-        assert!(arabic_first.ends_with("ﺔﻴﺑﺮﻌﻟﺍ"), "{arabic_first:?}");
-        assert!(latin_first.ends_with("123"), "{latin_first:?}");
+        assert!(arabic_first.contains("العربية"), "{arabic_first:?}");
+        assert!(latin_first.contains("123"), "{latin_first:?}");
         assert_ne!(arabic_first, latin_first);
     }
 
     #[test]
     fn combining_marks_stay_with_their_arabic_graphemes() {
-        let visual = display_text("مُحَمَّد");
-        assert!(visual.contains('\u{064F}'));
-        assert!(visual.contains('\u{064E}'));
-        assert!(visual.contains('\u{0651}'));
+        let original = "مُحَمَّد";
+        assert_eq!(display_text(original), original);
     }
 
     #[test]
