@@ -27,8 +27,7 @@ impl eframe::App for Showcase {
             ui.add_space(12.0);
             ui.horizontal(|ui| {
                 ui.label("Primary color");
-                let (rect, _) =
-                    ui.allocate_exact_size(egui::vec2(72.0, 28.0), egui::Sense::hover());
+                let (rect, _) = ui.allocate_exact_size(egui::vec2(72.0, 28.0), egui::Sense::hover());
                 ui.painter().rect_filled(rect, 6.0, palette::PRIMARY);
             });
 
