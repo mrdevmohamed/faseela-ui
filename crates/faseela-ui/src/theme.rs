@@ -38,7 +38,9 @@ pub fn apply_dark(ctx: &Context) {
     style.spacing.window_margin = Margin::same(16);
     style.spacing.item_spacing = egui::vec2(8.0, 8.0);
     style.spacing.button_padding = egui::vec2(12.0, 7.0);
-    style.text_styles.insert(egui::TextStyle::Heading, FontId::proportional(24.0));
+    style
+        .text_styles
+        .insert(egui::TextStyle::Heading, FontId::proportional(24.0));
     ctx.set_style(style);
 }
 
