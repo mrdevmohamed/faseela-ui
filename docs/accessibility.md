@@ -33,4 +33,9 @@ Accessibility behavior is covered by unit tests in the crate:
 - `layout::resize::tests::disabled_and_invalid_handles_never_resize` verifies disabled/inert semantics.
 - `widgets::tests::*` render all widgets for every preset and both directions and verify toolbar LTR/RTL placement.
 
-Limitations: egui/AccessKit integration is exercised through egui's in-process harness; real screen-reader verification still requires manual testing on each target platform. Full Arabic text-editing accessibility is out of scope (see [Arabic support](arabic-support.md)).
+## Platform support in egui 0.37
+
+- **Native:** the showcase enables eframe's `accesskit` feature, so the roles, labels, splitter actions, and selected states registered by Faseela widgets reach the platform AccessKit adapter.
+- **Web/WebAssembly:** eframe 0.37 does not expose AccessKit nodes on the web (`accesskit_update` is not implemented in its web backend). Its optional `web_screen_reader` feature only speaks egui's widget-event descriptions via the Web Speech API and is experimental; it is not enabled by the showcase. Browser screen-reader verification therefore still requires manual testing.
+
+Real screen-reader verification also requires manual testing on each target platform. Full Arabic text-editing accessibility is out of scope (see [Arabic support](arabic-support.md)).
