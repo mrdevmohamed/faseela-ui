@@ -1,41 +1,127 @@
 # Accessibility
 
-Accessibility is part of the widget contract, not an optional layer. Every interactive widget registers an accessible role, enabled state, and label; keyboard activation and focus indicators are provided where applicable.
+Accessibility is part of the widget contract, not an optional layer. Interactive widgets register a
+role, label, enabled state, and selected state where applicable. Focus indicators are painted from
+the theme's `focus` token, and keyboard behavior is implemented in the component or delegated to
+egui's click interaction.
 
-## What the widgets provide
+## What the components provide
 
-| Widget | Role / semantics | Keyboard & focus |
+| Component | Role / semantics | Keyboard and focus |
 | --- | --- | --- |
-| `buttons::IconButton` | `Role::Button`, selected state, independent accessible label | egui click/focus handling, inset focus stroke |
-| `tabs::Tab` | `Role::Tab`, selected state, label independent of id | egui interaction plus inset focus stroke |
-| `layout::ResizeHandle` | `Role::Splitter`, orientation, numeric value/range, Increment/Decrement/SetValue actions | arrows along the split axis, Tab traversal, temporary focus for pointer drags |
-| `widgets::Badge` | `Role::Label` with its text | static, not focusable |
-| `widgets::toolbar` | ordinary buttons plus a menu-based overflow control | Tab traversal, menu items are real buttons |
-| `widgets::EmptyState` action | ordinary button | Tab traversal and activation |
+| `buttons::Button` | `Role::Button`, selected state, visible label | Tab traversal, Space/Enter activation, inset focus ring, disabled state |
+| `buttons::IconButton` | `Role::Button`, selected state, independent accessible label | Tab traversal, Space/Enter, inset focus stroke, disabled state |
+| `forms::TextField` | Text input role; visible label as accessible name; error sets AccessKit invalid state | Text editing, selection, focus ring |
+| `forms::SearchField` | `Role::SearchInput` with label and search glyph | Text editing, selection, focus ring |
+| `forms::Checkbox` | `Role::CheckBox`, checked state, full-row click target | Space toggles when focused, focus ring |
+| `forms::Switch` | `Role::Switch`, checked state | Space toggles when focused, focus ring |
+| `forms::RadioButton` | `Role::RadioButton`, selected state | Space/Enter activation, focus ring |
+| `forms::RadioGroup` | `Role::RadioGroup` with group label; options are `Role::RadioButton` | Up/Down and direction-aware Left/Right, focus moves with selection |
+| `forms::Select` | Combo-box semantics from egui; label as accessible name; error sets invalid state | Space/Enter opens, Escape closes, arrow keys navigate the popup |
+| `navigation::ButtonGroup` | `Role::Toolbar` container; items are buttons with selected state | Tab traversal, Space/Enter activation, wraps at narrow widths |
+| `navigation::SegmentedControl` | `Role::RadioGroup` container; segments are `Role::RadioButton` | Up/Down, Home/End, direction-aware Left/Right, Space/Enter |
+| `navigation::Breadcrumb` | `Role::Navigation` container; earlier items are `Role::Link` | Tab traversal and Space/Enter on links; current item is not interactive |
+| `tabs::Tab` | `Role::Tab`, selected state, caller-painted focus outline | Caller-provided sense plus egui focus handling |
+| `layout::ResizeHandle` | `Role::Splitter`, orientation, numeric value/range, Increment/Decrement/SetValue actions | Arrows along the split axis, Tab traversal, temporary focus for pointer drags |
+| `widgets::ProgressBar` | `Role::ProgressIndicator`, accessible label, numeric 0–100 value | Static |
+| `widgets::LoadingIndicator` | `Role::ProgressIndicator`, label or `"Loading"` | Static |
+| `widgets::StatusIndicator` | Label plus `Role::Status` on the returned response | Static |
+| `widgets::Badge` | `Role::Label` with its text | Static, not focusable |
+| `widgets::toolbar` / `toolbar_response` | Buttons plus a menu-based overflow trigger; all commands remain reachable | Tab traversal, Space/Enter, menu navigation |
+| `widgets::EmptyState` action | Ordinary button | Tab traversal, Space/Enter |
+| `widgets::Tooltip` | Supporting hover text, not an accessible name | Pointer hover; see limits below |
 
 ## Direction-aware navigation
 
-`direction::step` maps horizontal arrow keys to logical previous/next in LTR and RTL. `direction::row`, `trailing`, `start_align`, `start_x`, `end_x`, and `forward` keep layout and navigation consistent with the reading direction. The resize handle and toolbar use the direction stored on the egui context.
+`direction::step` maps horizontal arrow keys to logical previous/next in LTR and RTL.
+`direction::row`, `trailing`, `start_align`, `start_x`, `end_x`, and `forward` keep layout and
+navigation consistent with the reading direction. `RadioGroup` and `SegmentedControl` use these rules
+for Left/Right; Up/Down always mean previous/next. The resize handle and toolbar use the direction
+stored on the egui context.
 
 ## Focus and disabled state
 
-- Focus indicators are drawn from `ThemeTokens::focus` and are inset so they remain visible inside bounds.
-- Disabled widgets keep their accessible role and label but report `enabled: false`; invalid geometry makes a widget inert rather than focusable.
-- Widget IDs are stable and never derived from translated labels. `Id::unique` hashes a fixed salt; append an index for repeated items.
+- Focus indicators use `ThemeTokens::focus` and are inset so they remain visible inside bounds.
+- A focused button, checkbox, switch, or clickable row responds to Space; Enter also activates
+  clickable buttons through egui's standard handling.
+- Disabled components keep their accessible role and visible label but report `enabled: false`. They
+  cannot be clicked or activated. Disabled toolbar commands behave the same in the bar and in the
+  overflow menu.
+- Invalid geometry makes a tab or resize handle inert rather than panicking or creating a focus trap.
+- Widget IDs are stable and never derived from translated labels. For repeated items, the supplied
+  stable ID is combined with the item index, for example
+  `id.with(("toolbar-item", index))` or `id.with(("radio-option", index))`.
+
+## Contrast evidence
+
+The theme tests compute WCAG 2.x relative luminance and contrast ratios rather than applying a
+luminance threshold to choose text colors. For every built-in preset they assert:
+
+- **Text, 4.5:1 minimum:** `text`, `muted_text`, and `secondary` on their intended backgrounds.
+- **Foreground pairs, 4.5:1 minimum:** `on_primary`/`primary`, `on_secondary`/`secondary`,
+  `on_accent`/`accent`, `on_success`/`success`, `on_warning`/`warning`, and `on_error`/`error`.
+- **Non-text, 3:1 minimum:** `focus` against the backgrounds where focus rings appear, and
+  `control_border` against control surfaces.
+
+The tests exercise all four presets, not only the default. The showcase's Appearance and
+Accessibility sections display the measured ratios from the same `contrast_ratio` function.
+
+This is evidence for the documented token pairs. It is not a complete audit of every composition an
+application can paint, and it does not cover text rendered at unusual sizes, custom colors, images,
+or application-provided content. Test custom color pairs with `theme::contrast_ratio` and do not rely
+on `ThemeTokens::on_color` for mid-tone fills: it chooses the better of white and dark ink, but both
+may still fail 4.5:1.
 
 ## Tests
 
-Accessibility behavior is covered by unit tests in the crate:
+Accessibility behavior is covered by unit and integration tests in the workspace:
 
-- `tabs::tests::tab_reports_tab_role_label_and_selected_state` verifies the emitted `WidgetInfo` role, selected state, label, and enabled flag after a click.
-- `layout::resize::tests::accesskit_increment_decrement_and_set_value_produce_resize_deltas` verifies AccessKit actions.
-- `layout::resize::tests::focused_handle_uses_only_the_arrows_along_its_axis` verifies arrow-key handling and focus locking.
-- `layout::resize::tests::disabled_and_invalid_handles_never_resize` verifies disabled/inert semantics.
-- `widgets::tests::*` render all widgets for every preset and both directions and verify toolbar LTR/RTL placement.
+- `theme::tests::every_preset_meets_wcag_aa_for_body_text_and_foregrounds` checks text, semantic
+  foregrounds, focus, and control borders across all presets.
+- `theme::tests::wcag_relative_luminance_matches_reference_values` checks the WCAG formula against
+  known reference values.
+- `buttons::tests::keyboard_space_and_enter_activate_a_focused_button` covers keyboard activation.
+- `buttons::tests::disabled_text_button_cannot_be_clicked` covers disabled behavior.
+- `forms::tests::switch_toggles_by_keyboard_space_when_focused` covers switch keyboard behavior.
+- `forms::tests::radio_group_changes_selection_by_click_and_arrow_key` covers radio-group keyboard
+  navigation.
+- `forms::tests::select_opens_with_keyboard_from_focus_and_closes_with_escape` covers select keyboard
+  operation.
+- `navigation::tests::segmented_control_click_and_arrow_keys_update_selection` covers segmented
+  keyboard navigation.
+- `navigation::tests::breadcrumb_activates_links_but_not_the_current_page` covers link/current-page
+  semantics.
+- `widgets::tests::toolbar_reports_counts_and_fits_within_available_width`,
+  `widgets::tests::overflow_label_uses_the_actual_count_including_three_digits`, and
+  `widgets::tests::disabled_toolbar_items_are_inert_in_the_bar_and_overflow_menu` cover overflow,
+  large counts, disabled commands, and reachability.
+- `widgets::tests::toolbar_item_ids_are_stable_in_ltr_and_rtl` covers stable IDs in both directions.
+- `layout::resize::tests::accesskit_increment_decrement_and_set_value_produce_resize_deltas` covers
+  AccessKit splitter actions.
+- Showcase tests render all ten sections at seven target viewports, in all themes and both
+  directions, and exercise navigation, forms, progress, theme switching, and RTL state.
 
 ## Platform support in egui 0.37
 
-- **Native:** the showcase enables eframe's `accesskit` feature, so the roles, labels, splitter actions, and selected states registered by Faseela widgets reach the platform AccessKit adapter.
-- **Web/WebAssembly:** eframe 0.37 does not expose AccessKit nodes on the web (`accesskit_update` is not implemented in its web backend). Its optional `web_screen_reader` feature only speaks egui's widget-event descriptions via the Web Speech API and is experimental; it is not enabled by the showcase. Browser screen-reader verification therefore still requires manual testing.
+- **Native:** the showcase enables eframe's `accesskit` feature for native builds. Roles, labels,
+  selected states, numeric progress values, and splitter actions are delivered to the platform
+  AccessKit adapter.
+- **Web/WebAssembly:** eframe 0.37 does not expose per-widget AccessKit nodes on the web
+  (`accesskit_update` is not implemented in its web backend). The optional `web_screen_reader`
+  feature speaks egui widget-event descriptions through the Web Speech API and is experimental; the
+  showcase does not enable it. Browser screen-reader verification therefore requires manual testing
+  and is not claimed here.
+- **Platform matrix:** actual screen-reader behavior (NVDA, VoiceOver, Orca, TalkBack) depends on the
+  platform and eframe backend. It has not been verified on every target.
 
-Real screen-reader verification also requires manual testing on each target platform. Full Arabic text-editing accessibility is out of scope (see [Arabic support](arabic-support.md)).
+## Known limitations
+
+- Helper and error text is visible and errors set the AccessKit invalid state, but explicit
+  description relationships are not guaranteed across backends.
+- `Tooltip` uses pointer hover. It does not replace a visible label, and keyboard-only or touch users
+  may never see it. Do not put essential information only in a tooltip.
+- Focus order follows widget layout. Use stable IDs and explicit labels; do not encode meaning only
+  in color.
+- Full Arabic text editing, bidi caret movement, selection, line breaking, IME, and locale formatting
+  are out of scope. See [Arabic support](arabic-support.md) for the exact list.
+- The contrast tests cover token pairs, not arbitrary custom painting.

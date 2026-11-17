@@ -10,25 +10,103 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   check:
-    name: Format, lint, and test
+    name: Format, lint, test, and showcase checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
+
       - uses: Swatinem/rust-cache@v2
+
       - name: Check formatting
         run: cargo fmt --all -- --check
-      - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Clippy (deny warnings)
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Workspace check
+        run: cargo check --workspace --all-targets --locked
+
       - name: Tests
-        run: cargo test --workspace
-      - name: Showcase build (native)
-        run: cargo check -p faseela-ui-showcase
-      - name: Showcase build (WebAssembly)
-        run: cargo check -p faseela-ui-showcase --target wasm32-unknown-unknown
+        run: cargo test --workspace --locked
+
+      - name: Showcase check (native)
+        run: cargo check -p faseela-ui-showcase --locked
+
+      - name: Showcase check (WebAssembly)
+        run: cargo check -p faseela-ui-showcase --locked --target wasm32-unknown-unknown
+
+  msrv:
+    name: MSRV 1.95
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@1.95.0
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check workspace on the minimum supported Rust version
+        run: cargo check --workspace --all-targets --locked
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Rustdoc with denied warnings
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --workspace --no-deps --locked
+
+  package:
+    name: Packaging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Package the library
+        run: cargo package -p faseela-ui --locked
+
+  wasm-release:
+    name: Production WebAssembly build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: trunk
+
+      - name: Build the showcase with Trunk
+        working-directory: examples/showcase
+        run: trunk build --release --locked --dist dist
+
+      - name: Upload the production showcase
+        uses: actions/upload-artifact@v4
+        with:
+          name: faseela-ui-showcase-wasm
+          path: examples/showcase/dist
