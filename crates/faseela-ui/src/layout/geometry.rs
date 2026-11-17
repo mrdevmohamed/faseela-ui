@@ -1,6 +1,6 @@
 //! Bounded geometry for a two-pane split.
 //!
-//! Adapted from https://github.com/storytold/craft-libs (MIT OR Apache-2.0).
+//! Adapted from <https://github.com/storytold/craft-libs> (MIT OR Apache-2.0).
 
 use egui::Rect;
 

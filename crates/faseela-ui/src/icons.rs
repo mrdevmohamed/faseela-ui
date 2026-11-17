@@ -4,7 +4,7 @@
 //! Install `egui_extras`' SVG image loader on the context before drawing an icon. This module
 //! does not parse SVG files, read from disk, or install global UI state.
 //!
-//! Adapted from https://github.com/storytold/craft-libs (MIT OR Apache-2.0).
+//! Adapted from <https://github.com/storytold/craft-libs> (MIT OR Apache-2.0).
 
 use std::collections::HashMap;
 use std::sync::Arc;

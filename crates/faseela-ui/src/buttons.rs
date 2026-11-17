@@ -1,6 +1,6 @@
 //! Accessible icon-only button primitives adapted from Craft's reusable egui controls.
 //!
-//! Upstream: https://github.com/storytold/craft-libs
+//! Upstream: <https://github.com/storytold/craft-libs>
 //! The application owns icon assets, commands and selection state.
 
 use egui::{Color32, CornerRadius, Rect, Response, Sense, Stroke, StrokeKind, Ui, Vec2};

@@ -189,4 +189,40 @@ mod tests {
         assert_eq!(visual.lines().count(), 2);
         assert!(visual.ends_with("Faseela"));
     }
+
+    #[test]
+    fn arabic_is_never_converted_to_presentation_forms() {
+        let inputs = ["مرحبا بالعالم", "السلام عليكم ١٢٣", "نص mixed مع 123"];
+        for input in inputs {
+            let visual = display_text(input);
+            assert!(
+                visual
+                    .chars()
+                    .all(|character| !('\u{FE70}'..='\u{FEFF}').contains(&character)),
+                "presentation form in {visual:?}"
+            );
+            for character in input.chars().filter(|character| !character.is_whitespace()) {
+                assert!(
+                    visual.contains(character),
+                    "lost {character:?} from {input:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn emoji_zwj_sequences_survive_reordering() {
+        let family = "👨‍👩‍👧";
+        let visual = display_text(&format!("مرحبا {family} world"));
+        assert!(visual.contains(family), "{visual:?}");
+        assert_eq!(visual.matches('\u{200D}').count(), 2);
+    }
+
+    #[test]
+    fn arabic_indic_and_latin_digits_keep_their_codepoints() {
+        let visual = display_text("العدد ١٢٣ و 456");
+        for digit in "١٢٣456".chars() {
+            assert!(visual.contains(digit), "lost {digit:?} in {visual:?}");
+        }
+    }
 }

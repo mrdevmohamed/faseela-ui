@@ -1,7 +1,7 @@
 //! Tab-strip width fitting without owning a tab model, painter, or overflow menu.
 //!
 //! The caller owns tab identity, selection, rendering, and overflow behavior.
-//! Adapted from https://github.com/storytold/craft-libs (MIT OR Apache-2.0).
+//! Adapted from <https://github.com/storytold/craft-libs> (MIT OR Apache-2.0).
 
 /// Tabs visible on a strip and tabs that need an overflow menu, in original order.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -261,7 +261,7 @@ impl<'a> Tab<'a> {
         );
         response.widget_info(|| {
             egui::WidgetInfo::selected(
-                egui::Role::Button,
+                egui::Role::Tab,
                 valid && ui.is_enabled(),
                 self.selected,
                 self.label,
@@ -347,5 +347,62 @@ mod tests {
                 .iter()
                 .all(|(_, width)| width.is_finite() && *width >= 0.0)
         );
+    }
+
+    #[test]
+    fn tab_reports_tab_role_label_and_selected_state() {
+        use egui::{
+            Context, Event, Id, PointerButton, Pos2, RawInput, output::OutputEvent, pos2, vec2,
+        };
+
+        let ctx = Context::default();
+        let id = Id::unique("accessible-tab");
+        let rect = egui::Rect::from_min_size(pos2(10.0, 10.0), vec2(80.0, 30.0));
+        let center = rect.center();
+        let screen = egui::Rect::from_min_size(Pos2::ZERO, vec2(200.0, 100.0));
+
+        let frame = |events: Vec<Event>| {
+            let ctx = ctx.clone();
+            let mut output = ctx.run_ui(
+                RawInput {
+                    screen_rect: Some(screen),
+                    events,
+                    ..Default::default()
+                },
+                |ui| {
+                    Tab::new(id, "Overview", true).show_at(ui, rect, |_, _| {});
+                },
+            );
+            output.textures_delta.clear();
+            output
+        };
+
+        let _ = frame(vec![Event::PointerMoved(center)]);
+        let _ = frame(vec![Event::PointerButton {
+            pos: center,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Default::default(),
+        }]);
+        let output = frame(vec![Event::PointerButton {
+            pos: center,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Default::default(),
+        }]);
+
+        let clicked = output
+            .platform_output
+            .events
+            .iter()
+            .find_map(|event| match event {
+                OutputEvent::Clicked(info) => Some(info),
+                _ => None,
+            })
+            .expect("clicking the tab must emit its accessibility info");
+        assert_eq!(clicked.role, egui::Role::Tab);
+        assert_eq!(clicked.selected, Some(true));
+        assert_eq!(clicked.label.as_deref(), Some("Overview"));
+        assert!(clicked.enabled);
     }
 }

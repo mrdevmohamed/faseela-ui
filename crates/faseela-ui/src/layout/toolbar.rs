@@ -4,7 +4,7 @@
 /// hide commands, create a menu, or change widget identity. The caller must make every index in
 /// `overflow` available through an enabled, focusable overflow control and its menu.
 ///
-/// Adapted from https://github.com/storytold/craft-libs (MIT OR Apache-2.0).
+/// Adapted from <https://github.com/storytold/craft-libs> (MIT OR Apache-2.0).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ToolbarFit {
     /// A leading sequence of `(input index, natural width)` pairs. Groups are never compressed.

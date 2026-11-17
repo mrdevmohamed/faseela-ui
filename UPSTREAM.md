@@ -35,6 +35,11 @@ This repository is not a fork and does not imply endorsement by the Craft/ArtCra
 - `crates/faseela-ui/src/layout/resize.rs` adapts Craft UI's resize-handle interaction model from `crates/ui/src/layout/resize.rs`, using the published egui 0.37 APIs. It retains pointer/keyboard focus handling and AccessKit splitter actions, but returns a resize delta instead of mutating a dock model. The source adaptation retains the upstream MIT OR Apache-2.0 attribution.
 
 
+## Faseela-owned widgets
+
+- `crates/faseela-ui/src/widgets.rs` (`Card`, `SectionHeader`, `Badge`, `EmptyState`, and the responsive `toolbar`) is Faseela-owned code built on this repository's theme tokens and `layout::fit_toolbar`. It copies no upstream source. The toolbar uses egui's public `MenuButton`/`Button` widgets so overflow commands stay reachable.
+- `crates/faseela-ui/src/theme.rs` design-token API is Faseela-owned. It keeps the official Faseela palette from the first commit and adds coherent tokens for the other presets; no upstream theme code was copied.
+
 ## Arabic text rendering
 
 - `crates/faseela-ui/src/text.rs` is Faseela-owned display logic for mixed RTL/LTR visual ordering and mirroring of paired punctuation. It uses the `unicode-bidi`, `unicode-segmentation`, and `unicode-bidi-mirroring` crates. Arabic letter joining is done by egui's own shaper, not by this crate. Application strings must remain in logical Unicode order; call `text::display_text` only at the rendering boundary.

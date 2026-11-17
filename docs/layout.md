@@ -101,9 +101,9 @@ For a non-empty input, dimensions must be finite, each group width and overflow-
 These helpers intentionally stop before rendering a full docking workspace. Application code remains responsible for:
 
 - persistent split trees and fixed-versus-relative policy;
-- dragging, keyboard input, focus, and accessible splitter actions;
+- applying returned resize deltas to application state and persisting them;
 - pane contents and command dispatch;
-- overflow-menu rendering and ensuring all commands remain reachable;
+- for the pure fitting algorithms, overflow-menu rendering and ensuring all commands remain reachable (the `widgets::toolbar` component provides a ready-made reachable menu);
 - mirroring logical pane placement for RTL interfaces.
 
 The algorithms are adapted from [Craft UI](https://github.com/storytold/craft-libs/tree/main/crates/ui/src/layout) under its MIT OR Apache-2.0 license. See [UPSTREAM.md](../UPSTREAM.md).

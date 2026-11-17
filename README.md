@@ -6,13 +6,13 @@ The project is based on **egui** and keeps application state and domain logic se
 
 ## Current status
 
-Faseela UI provides a reusable foundation for application chrome: buttons, SVG icon preparation, tabs, themes, explicit LTR/RTL interface helpers, short-label BiDi display support, bounded split geometry, and responsive toolbar fitting. The interactive native/WebAssembly showcase exercises the shared components.
+Faseela UI provides a reusable foundation for application chrome: four theme presets backed by a single design-token API, accessible icon buttons, caller-painted tabs, cards, section headers, status badges, empty states, a responsive overflow toolbar, explicit LTR/RTL interface helpers, short-label BiDi display support, bounded split geometry with an interactive resize handle, and toolbar fitting. The interactive native/WebAssembly showcase exercises the shared components.
 
 Craft UI functionality is being evaluated and ported in small, independently testable stages. Application-specific docking trees, commands, document models, and persistence remain outside this crate. The current Arabic display helper is transitional and must not be used for editable text.
 
 ## Workspace
 
-- `crates/faseela-ui`: shared widgets and design foundations, including buttons, icons, tabs, layout algorithms, RTL helpers, text display helpers, and theme tokens.
+- `crates/faseela-ui`: shared widgets and design foundations, including theme tokens, reusable widgets, buttons, icons, tabs, layout algorithms, RTL helpers, and text display helpers.
 - `examples/showcase`: executable native and WebAssembly preview app.
 
 ## Live showcase
@@ -24,7 +24,7 @@ The interactive Rust/egui showcase is compiled to WebAssembly and published with
 - Browser page: `examples/showcase/index.html`
 - Build locally: install the `wasm32-unknown-unknown` target and Trunk, then run `cd examples/showcase && trunk serve`.
 
-The showcase exercises the shared theme, icon button, tabs, selection control, LTR/RTL direction switch, and responsive split layout. It uses the same Rust widgets as the native showcase.
+The showcase exercises the shared theme presets, design tokens, icon button, interactive tabs, badges, cards, section headers, empty and populated states, responsive toolbar with overflow menu, selection controls, LTR/RTL direction switch, and resizable split layout. It uses the same public widgets as the native showcase and switches themes immediately.
 
 ### Arabic and mixed-direction text
 
@@ -42,6 +42,24 @@ The helper is intended for short UI strings, not as a replacement for a full tex
 
 The `layout` module provides bounded two-pane geometry, an interactive splitter with pointer, keyboard, and AccessKit support, and toolbar overflow fitting. Applications still own pane state, commands, and overflow-menu contents. See [docs/layout.md](docs/layout.md) for examples and edge-case behavior.
 
+### Themes and design tokens
+
+Four presets (`FaseelaDark`, `Midnight`, `Forest`, `Light`) share one semantic token set. `apply_preset` installs the tokens into egui's visuals and records them so caller-painted widgets can read the same colors:
+
+```rust
+use faseela_ui::theme::{self, ThemePreset};
+
+theme::apply_preset(&ctx, ThemePreset::Light);
+let tokens = theme::active_tokens(&ctx);
+let accent = tokens.accent; // Light preset's accent, not a hard-coded brand color
+```
+
+Custom painting should use `theme::active_tokens(ui.ctx())` rather than the fixed `palette` constants, so a theme switch takes effect on the very next frame. See [docs/theme.md](docs/theme.md).
+
+### Reusable widgets
+
+The `widgets` module provides theme-aware `Card`, `SectionHeader`, `Badge`, `EmptyState`, and an interactive responsive `toolbar`, alongside the icon button and accessible `Tab` in their own modules. Widgets return proposals (for example the clicked toolbar index) and leave state and command dispatch to the application. See [docs/components.md](docs/components.md).
+
 ## Quick start
 
 ```toml
@@ -50,9 +68,11 @@ faseela-ui = { git = "https://github.com/mrdevmohamed/faseela-ui" }
 ```
 
 ```rust
-faseela_ui::theme::apply_dark(&ctx);
+faseela_ui::theme::apply_preset(&ctx, faseela_ui::theme::ThemePreset::FaseelaDark);
 faseela_ui::direction::apply(&ctx, faseela_ui::direction::Direction::Rtl);
 ```
+
+`apply_dark` remains available as a backward-compatible shortcut for the default preset.
 
 ## Design principles
 
