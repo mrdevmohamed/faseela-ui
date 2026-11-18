@@ -88,6 +88,7 @@ jobs:
   wasm-release:
     name: Production WebAssembly build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -115,8 +116,11 @@ jobs:
           chrome-version: stable
 
       - name: Smoke test the production showcase in Chrome
+        timeout-minutes: 5
         env:
           CHROME: ${{ steps.chrome.outputs.chrome-path }}
+          FASEELA_BROWSER_STARTUP_TIMEOUT_MS: 45000
+          FASEELA_BROWSER_COMMAND_TIMEOUT_MS: 20000
         run: node tools/browser-smoke.mjs
 
       - name: Upload browser captures for visual review
