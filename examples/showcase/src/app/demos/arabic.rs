@@ -1,9 +1,9 @@
 use super::*;
-use eframe::egui::{self, Align, Id, RichText, Ui};
+use eframe::egui::{Id, RichText, Ui};
 use faseela_ui::{
     forms::TextField,
     navigation::ButtonGroup,
-    text, theme,
+    theme,
     widgets::{Badge, BadgeTone, SectionHeader},
 };
 
@@ -53,19 +53,12 @@ impl Showcase {
                 .caption("Short display labels are reordered; egui handles Arabic letter shaping.")
                 .show(ui);
             ui.add_space(8.0);
-            let headline = text::display_text("فسيلة: واجهة عربية أنيقة وسريعة");
-            ui.add(
-                egui::Label::new(RichText::new(headline).size(18.0).color(tokens.text))
-                    .halign(if self.rtl { Align::RIGHT } else { Align::LEFT })
-                    .wrap(),
-            );
-            let body = text::display_text(
-                "تعرض هذه الصفحة نصًا عربيًا متصل الحروف، مع أرقام لاتينية مثل 2026 و3.5.",
-            );
-            ui.add(
-                egui::Label::new(RichText::new(body).size(12.0).color(tokens.muted_text))
-                    .halign(if self.rtl { Align::RIGHT } else { Align::LEFT })
-                    .wrap(),
+            display_label(ui, "فسيلة: واجهة عربية أنيقة وسريعة", 18.0, tokens.text);
+            display_label(ui, "الأرقام 2026 و3.5", 12.0, tokens.muted_text);
+            ui.label(
+                RichText::new("Display-only samples; mixed-text wrapping is approximate.")
+                    .small()
+                    .color(tokens.muted_text),
             );
         });
 
@@ -82,12 +75,7 @@ impl Showcase {
                 .id(Id::unique("showcase-arabic-input"))
                 .show(ui);
             ui.add_space(6.0);
-            let shaped = text::display_text(&self.arabic_input);
-            ui.add(
-                egui::Label::new(RichText::new(shaped).size(13.0).color(tokens.secondary))
-                    .halign(if self.rtl { Align::RIGHT } else { Align::LEFT })
-                    .wrap(),
-            );
+            display_label(ui, &self.arabic_input, 13.0, tokens.secondary);
             ui.add_space(6.0);
             ui.label(
                 RichText::new(

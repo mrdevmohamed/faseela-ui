@@ -229,3 +229,20 @@ pub(super) fn density_label(index: usize) -> &'static str {
 pub(super) fn hex(color: Color32) -> String {
     format!("#{:02X}{:02X}{:02X}", color.r(), color.g(), color.b())
 }
+
+/// Reordered display text must never become clipboard contents or an accessible reading value.
+pub(super) fn display_label(ui: &mut Ui, logical: &str, size: f32, color: Color32) {
+    let response = ui.add(
+        egui::Label::new(
+            RichText::new(faseela_ui::text::display_text(logical))
+                .size(size)
+                .color(color),
+        )
+        .selectable(false)
+        .halign(faseela_ui::direction::start_align(ui))
+        .wrap(),
+    );
+    ui.ctx().accesskit_node_builder(response.id, |node| {
+        node.set_value(logical);
+    });
+}

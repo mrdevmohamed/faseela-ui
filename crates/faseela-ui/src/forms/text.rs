@@ -114,21 +114,30 @@ impl<'a> TextField<'a> {
         let width = requested_width.min(available_width).min(4096.0);
         if width < 24.0 {
             let id = self.id.unwrap_or_else(|| ui.next_auto_id());
-            let (rect, _) = ui.allocate_exact_size(vec2(width, 0.0), Sense::hover());
-            let response = ui.interact(rect, id, Sense::hover());
-            response.widget_info(|| {
-                WidgetInfo::labeled(Role::TextInput, enabled, self.label.unwrap_or("Text input"))
-            });
-            ui.ctx().accesskit_node_builder(id, |node| {
-                if let Some(label) = self.label {
-                    node.set_label(label);
-                }
-                node.set_disabled();
-                if self.error.is_some() {
-                    node.set_invalid(accesskit::Invalid::True);
-                }
-            });
-            return response;
+            return ui
+                .add_enabled_ui(false, |ui| {
+                    let (rect, _) = ui.allocate_exact_size(vec2(width, 0.0), Sense::hover());
+                    let response = ui.interact(rect, id, Sense::hover());
+                    response.widget_info(|| {
+                        WidgetInfo::labeled(
+                            Role::TextInput,
+                            false,
+                            self.label.unwrap_or("Text input"),
+                        )
+                    });
+                    ui.ctx().accesskit_node_builder(id, |node| {
+                        if let Some(label) = self.label {
+                            node.set_label(label);
+                        }
+                        node.set_disabled();
+                        if self.error.is_some() {
+                            node.set_invalid(accesskit::Invalid::True);
+                        }
+                    });
+                    support_text(ui, self.helper, self.error, false, &response);
+                    response
+                })
+                .inner;
         }
         // Relax decoration before shrinking the editor in very narrow containers.
         let horizontal_padding = ((width - 24.0) * 0.5).clamp(0.0, 10.0) as i8;

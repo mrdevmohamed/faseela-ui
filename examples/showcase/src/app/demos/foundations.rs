@@ -1,11 +1,9 @@
 use super::*;
 use eframe::egui::{
-    self, Align2, CornerRadius, FontId, Id, Rect, RichText, Sense, Stroke, StrokeKind, Ui, pos2,
-    vec2,
+    Align2, CornerRadius, FontId, Id, Rect, RichText, Sense, Stroke, StrokeKind, Ui, pos2, vec2,
 };
 use faseela_ui::{
     buttons::{Button, ButtonVariant},
-    text,
     theme::{self, ThemePreset},
     widgets::SectionHeader,
 };
@@ -34,9 +32,11 @@ impl Showcase {
                 .color(tokens.muted_text),
             );
             ui.add_space(8.0);
-            let arabic = text::display_text("مرحبًا بك في مكتبة فسيلة للواجهات.");
-            ui.add(
-                egui::Label::new(RichText::new(arabic).size(13.0).color(tokens.secondary)).wrap(),
+            display_label(
+                ui,
+                "مرحبًا بك في مكتبة فسيلة للواجهات.",
+                13.0,
+                tokens.secondary,
             );
         });
 
