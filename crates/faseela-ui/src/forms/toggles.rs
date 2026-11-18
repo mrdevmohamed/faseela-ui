@@ -1,6 +1,6 @@
 //! Checkbox and switch values remain application-owned.
 use super::common::support_text;
-use super::options::{ControlKind, option_row, option_row_with_control};
+use super::options::{ControlKind, option_row_with_control};
 use egui::{Id, Response, Ui, Vec2};
 
 const CHECKBOX_SIZE: f32 = 18.0;
@@ -64,13 +64,14 @@ impl<'a> Checkbox<'a> {
 
     fn show_in(self, ui: &mut Ui) -> Response {
         ui.vertical(|ui| {
-            let mut response = option_row(
+            let mut response = option_row_with_control(
                 ui,
                 self.label,
                 self.id,
                 ControlKind::CheckBox,
                 *self.value,
-                CHECKBOX_SIZE,
+                Vec2::splat(CHECKBOX_SIZE),
+                self.error.is_some(),
             );
             if response.clicked() {
                 *self.value = !*self.value;
@@ -148,6 +149,7 @@ impl<'a> Switch<'a> {
                 ControlKind::Switch,
                 *self.value,
                 SWITCH_SIZE,
+                self.error.is_some(),
             );
             if response.clicked() {
                 *self.value = !*self.value;

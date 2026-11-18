@@ -105,6 +105,27 @@ jobs:
         working-directory: examples/showcase
         run: trunk build --release --locked --dist dist
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+
+      - name: Smoke test the production showcase in Chrome
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: node tools/browser-smoke.mjs
+
+      - name: Upload browser captures for visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: faseela-ui-browser-captures
+          path: target/browser-smoke
+
       - name: Upload the production showcase
         uses: actions/upload-artifact@v4
         with:

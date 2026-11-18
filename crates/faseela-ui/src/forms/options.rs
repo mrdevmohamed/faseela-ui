@@ -55,7 +55,15 @@ pub(super) fn option_row(
     selected: bool,
     control_size: f32,
 ) -> Response {
-    option_row_with_control(ui, label, id, kind, selected, Vec2::splat(control_size))
+    option_row_with_control(
+        ui,
+        label,
+        id,
+        kind,
+        selected,
+        Vec2::splat(control_size),
+        false,
+    )
 }
 
 pub(super) fn option_row_with_control(
@@ -65,6 +73,7 @@ pub(super) fn option_row_with_control(
     kind: ControlKind,
     selected: bool,
     control_size: Vec2,
+    invalid: bool,
 ) -> Response {
     let tokens = theme::active_tokens(ui.ctx());
     let enabled = ui.is_enabled();
@@ -83,6 +92,7 @@ pub(super) fn option_row_with_control(
             focused: response.has_focus(),
             hovered: response.hovered(),
             pressed: response.is_pointer_button_down_on(),
+            invalid,
             tokens,
             control_size,
         },
@@ -106,6 +116,7 @@ pub(super) struct OptionPaint<'a> {
     pub(super) focused: bool,
     pub(super) hovered: bool,
     pub(super) pressed: bool,
+    pub(super) invalid: bool,
     pub(super) tokens: ThemeTokens,
     pub(super) control_size: Vec2,
 }
@@ -119,6 +130,7 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
         focused,
         hovered,
         pressed,
+        invalid,
         tokens,
         control_size,
     } = paint;
@@ -172,9 +184,9 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
     let idle_fill = if !enabled {
         tokens.disabled
     } else if pressed {
-        tokens.hover
+        tokens.active
     } else if hovered {
-        tokens.elevated_surface
+        tokens.hover
     } else {
         tokens.surface
     };
@@ -192,6 +204,8 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
             };
             let border = if !enabled {
                 tokens.border
+            } else if invalid {
+                tokens.error
             } else if focused {
                 tokens.focus
             } else {
@@ -223,6 +237,8 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
             let fill = idle_fill;
             let border = if !enabled {
                 tokens.border
+            } else if invalid {
+                tokens.error
             } else if focused {
                 tokens.focus
             } else {
@@ -259,6 +275,8 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
             };
             let border = if !enabled {
                 tokens.border
+            } else if invalid {
+                tokens.error
             } else if focused {
                 tokens.focus
             } else {

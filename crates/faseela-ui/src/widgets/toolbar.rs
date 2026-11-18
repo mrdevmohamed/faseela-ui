@@ -5,7 +5,9 @@ use crate::{
     layout::{ToolbarFit, fit_toolbar},
     theme,
 };
-use egui::{Color32, FontId, Id, Layout, RichText, Sense, Stroke, Ui, Vec2, WidgetInfo, vec2};
+use egui::{
+    Color32, CornerRadius, FontId, Id, Popup, Sense, Stroke, StrokeKind, Ui, Vec2, WidgetInfo, vec2,
+};
 
 /// One command shown in a [`toolbar`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -150,7 +152,7 @@ pub fn toolbar(ui: &mut Ui, id: Id, items: &[ToolbarItem<'_>]) -> Option<usize> 
 
 /// Show a responsive command bar and report its layout state.
 ///
-/// Disabled items stay visible and focusable in the accessibility tree but cannot be activated,
+/// Disabled items stay visible and named in the accessibility tree but cannot be activated,
 /// whether they are painted in the bar or listed in the overflow menu. Every item has a stable ID:
 /// visible item `i` is `id.with(("toolbar-item", i))`, menu item `i` is
 /// `id.with(("overflow-item", i))`, and [`ToolbarResponse::overflow_button_id`] identifies the
@@ -258,47 +260,66 @@ pub fn toolbar_response(ui: &mut Ui, id: Id, items: &[ToolbarItem<'_>]) -> Toolb
     let mut overflow_button_id = None;
     if let Some(menu_rect) = overflow {
         let count = fit.overflow.len();
-        ui.scope_builder(
-            egui::UiBuilder::new()
-                .scope_id(id.with("overflow"))
-                .max_rect(menu_rect)
-                .layout(Layout::centered_and_justified(egui::Direction::TopDown)),
-            |ui| {
-                let label = format!("+{count}");
-                let button = egui::Button::new(
-                    RichText::new(&label)
-                        .color(tokens.on_primary)
-                        .size(font.size),
-                )
-                .fill(tokens.primary)
-                .stroke(Stroke::NONE)
-                .min_size(menu_rect.size());
-                let menu = egui::containers::menu::MenuButton::from_button(button);
-                let (response, _) = menu.ui(ui, |ui| {
-                    for &index in &fit.overflow {
-                        let item = items[index];
-                        let entry = ThemedButton::new(item.label)
-                            .variant(ButtonVariant::Ghost)
-                            .size(size)
-                            .enabled(item.enabled)
-                            .full_width()
-                            .id(id.with(("overflow-item", index)));
-                        if entry.show(ui).clicked() {
-                            activated = Some(index);
-                            ui.close();
-                        }
-                    }
-                });
-                response.widget_info(|| {
-                    WidgetInfo::labeled(
-                        egui::Role::Button,
-                        ui.is_enabled(),
-                        format!("More commands: {label}"),
-                    )
-                });
-                overflow_button_id = Some(response.id);
+        let label = format!("+{count}");
+        let trigger_id = id.with("overflow-trigger");
+        let trigger = ui.interact(
+            menu_rect,
+            trigger_id,
+            if ui.is_enabled() {
+                Sense::click()
+            } else {
+                Sense::hover()
             },
         );
+        let trigger_fill = if trigger.is_pointer_button_down_on() {
+            theme::blend(tokens.primary, Color32::BLACK, 0.13)
+        } else if trigger.hovered() || trigger.has_focus() {
+            theme::blend(tokens.primary, Color32::WHITE, 0.08)
+        } else {
+            tokens.primary
+        };
+        ui.painter()
+            .rect_filled(menu_rect, CornerRadius::same(6), trigger_fill);
+        let galley = ui.fonts_mut(|fonts| {
+            fonts.layout_no_wrap(label.clone(), font.clone(), tokens.on_primary)
+        });
+        ui.painter().galley(
+            menu_rect.center() - galley.rect.size() * 0.5,
+            galley,
+            tokens.on_primary,
+        );
+        if trigger.has_focus() {
+            ui.painter().rect_stroke(
+                menu_rect.shrink(2.0),
+                CornerRadius::same(4),
+                Stroke::new(2.0, tokens.on_primary),
+                StrokeKind::Inside,
+            );
+        }
+        trigger.widget_info(|| {
+            WidgetInfo::labeled(
+                egui::Role::Button,
+                trigger.enabled(),
+                format!("More commands: {label}"),
+            )
+        });
+        let menu_id = trigger_id.with("popup");
+        Popup::menu(&trigger).id(menu_id).show(|ui| {
+            for &index in &fit.overflow {
+                let item = items[index];
+                let entry = ThemedButton::new(item.label)
+                    .variant(ButtonVariant::Ghost)
+                    .size(size)
+                    .enabled(item.enabled)
+                    .full_width()
+                    .id(id.with(("overflow-item", index)));
+                if entry.show(ui).clicked() {
+                    activated = Some(index);
+                    Popup::close_id(ui.ctx(), menu_id);
+                }
+            }
+        });
+        overflow_button_id = Some(trigger.id);
     }
 
     ToolbarResponse {

@@ -2,7 +2,10 @@
 use super::common::{FIELD_FONT_SIZE, field_label, support_text};
 use crate::theme;
 use egui::RichText;
-use egui::{CornerRadius, Id, Margin, Response, Role, Stroke, StrokeKind, TextEdit, Ui, accesskit};
+use egui::{
+    CornerRadius, Id, Margin, Response, Role, Sense, Stroke, StrokeKind, TextEdit, Ui, WidgetInfo,
+    accesskit, vec2,
+};
 
 /// A single-line text field with a label, placeholder, helper text, and error state.
 ///
@@ -109,6 +112,24 @@ impl<'a> TextField<'a> {
         let available_width = ui.available_width().max(0.0);
         let requested_width = self.width.unwrap_or(available_width);
         let width = requested_width.min(available_width).min(4096.0);
+        if width < 24.0 {
+            let id = self.id.unwrap_or_else(|| ui.next_auto_id());
+            let (rect, _) = ui.allocate_exact_size(vec2(width, 0.0), Sense::hover());
+            let response = ui.interact(rect, id, Sense::hover());
+            response.widget_info(|| {
+                WidgetInfo::labeled(Role::TextInput, enabled, self.label.unwrap_or("Text input"))
+            });
+            ui.ctx().accesskit_node_builder(id, |node| {
+                if let Some(label) = self.label {
+                    node.set_label(label);
+                }
+                node.set_disabled();
+                if self.error.is_some() {
+                    node.set_invalid(accesskit::Invalid::True);
+                }
+            });
+            return response;
+        }
         // Relax decoration before shrinking the editor in very narrow containers.
         let horizontal_padding = ((width - 24.0) * 0.5).clamp(0.0, 10.0) as i8;
         let content_width = (width - f32::from(horizontal_padding) * 2.0).max(0.0);

@@ -222,7 +222,7 @@ impl<'a> Tab<'a> {
         self
     }
 
-    /// Set the inset keyboard-focus outline. By default egui's selection stroke is used.
+    /// Set the inset keyboard-focus outline. Defaults to theme focus, or `on_primary` when selected.
     /// Passing `Stroke::NONE` disables the outline.
     pub fn focus_stroke(mut self, stroke: egui::Stroke) -> Self {
         self.focus_stroke = Some(stroke);

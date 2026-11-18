@@ -42,6 +42,8 @@ stored on the egui context.
 ## Focus and disabled state
 
 - Focus indicators use `ThemeTokens::focus` and are inset so they remain visible inside bounds.
+- On a selected/filled control, the inset focus ring switches to the corresponding contrasting
+  foreground token when that is more legible than the ordinary focus token.
 - A focused button, checkbox, switch, or clickable row responds to Space; Enter also activates
   clickable buttons through egui's standard handling.
 - Disabled components keep their accessible role and visible label but report `enabled: false`. They
@@ -116,8 +118,9 @@ Accessibility behavior is covered by unit and integration tests in the workspace
 
 ## Known limitations
 
-- Helper and error text is visible and errors set the AccessKit invalid state, but explicit
-  description relationships are not guaranteed across backends.
+- Helper and error nodes are linked to their controls using AccessKit `described_by`; errors also
+  set invalid state on checkbox, switch, radio group, select, and text input. Backend announcement
+  of description relationships is not guaranteed.
 - `Tooltip` uses pointer hover. It does not replace a visible label, and keyboard-only or touch users
   may never see it. Do not put essential information only in a tooltip.
 - Focus order follows widget layout. Use stable IDs and explicit labels; do not encode meaning only
@@ -125,3 +128,19 @@ Accessibility behavior is covered by unit and integration tests in the workspace
 - Full Arabic text editing, bidi caret movement, selection, line breaking, IME, and locale formatting
   are out of scope. See [Arabic support](arabic-support.md) for the exact list.
 - The contrast tests cover token pairs, not arbitrary custom painting.
+
+## Interaction verification
+
+- `Checkbox` and `Switch` publish the new toggled state on the same activation frame. Their default
+  IDs use egui layout identity rather than the label; translated duplicate labels remain distinct.
+- `RadioGroup` and `SegmentedControl` use selected radio semantics, not checkbox toggled state. The
+  segmented control's visible label is its group name. It and the radio group consume handled arrow
+  keys and return `changed()` when the selected index changes.
+- `ButtonGroup::response.changed()` indicates a different selected index; `activated` also reports
+  activation of an already-selected item. Select returns changed response when the caller's index
+  changes through the popup.
+- `Tab` publishes AccessKit `selected`. `IconButton` preserves the caller's selected state while
+  disabled; all disabled controls remain inert.
+- Integration tests drive egui `RawInput` for pointer, Space/Enter, arrow, Home/End, Escape,
+  clipboard and IME events, then assert caller state, responses and AccessKit nodes. They do not
+  emulate native focus managers or a real OS/web screen-reader pipeline.

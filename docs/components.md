@@ -46,6 +46,9 @@ Builder methods:
 
 Space and Enter activate a focused button through egui's click interaction. The focus ring is painted
 inside the button bounds and uses `ThemeTokens::focus`.
+On filled and selected buttons the inset focus stroke uses the matching foreground so it contrasts
+with the fill. Long labels are clipped inside the allocated button when a container is too narrow;
+`min_width` remains a preference bounded by the parent. Icon glyph width does not determine height.
 
 ### `IconButton`
 
@@ -135,6 +138,11 @@ Switch::new("Compact spacing", &mut app.compact)
 Both support `enabled`, `id`, `helper`, and `error`. The whole labeled row is clickable. A focused
 checkbox or switch responds to Space through egui's click handling. `Switch` is visually distinct
 and reports a role of `Switch`.
+The activation frame paints and reports the new boolean value. Default IDs use egui's layout
+identity, independently of the visible label; repeated and translated labels do not share IDs.
+Use explicit IDs for controls that move in a dynamic UI. The switch knob mirrors in RTL.
+Helper/error nodes are linked to the control through AccessKit `described_by`, and an error marks
+checkboxes and switches invalid as well as rendering visible error text.
 
 ### `RadioButton` and `RadioGroup`
 
@@ -158,8 +166,9 @@ RadioGroup::new(&["Compact", "Comfortable", "Spacious"], &mut app.density)
 `RadioGroup` supports `label`, `enabled`, `id`, `helper`, and `error`. Clicking an option selects it
 immediately. Up/Down move backward/forward; Left/Right follow the interface reading direction.
 Option IDs are `group_id.with(("radio-option", index))`, so they remain stable across layout changes.
-An out-of-range selected index paints no option as selected and is clamped when the group is shown;
-clicking selects a valid option again.
+An out-of-range selected index is clamped when a nonempty enabled group is shown, and the returned
+response reports `changed()`. Disabled and empty groups preserve caller state. Arrow navigation
+consumes the handled key so parent shortcuts and scroll areas do not also act on it.
 
 ### `Select`
 
@@ -178,6 +187,8 @@ Select::new("Plan", &["Starter", "Team", "Enterprise"], &mut app.plan)
 `Select` supports `enabled`, `id`, `width`, `helper`, and `error`. Click or Space/Enter opens the
 popup; Escape closes it. Choosing an option updates the index and closes the popup. The visible label
 is also the accessible name, and an error sets the invalid state.
+Selecting an option sets `changed()` on the returned combo-box response. Long selections truncate
+within the requested width. The popup uses egui's native keyboard and dismissal behavior.
 
 ## Navigation
 
@@ -203,6 +214,9 @@ if let Some(index) = result.activated {
 
 `SelectionResponse` contains the container `response` and the `activated` index. An out-of-range
 starting selection paints no button as selected; clicking selects a valid index.
+`response.changed()` reports a changed selected index, whereas `activated` also reports activating
+the already-selected entry. The row stays compact in a tall parent and wraps to additional rows as
+needed rather than centering inside the parent's remaining height.
 
 ### `SegmentedControl`
 
@@ -221,6 +235,9 @@ let result = SegmentedControl::new(&["Design", "Develop", "Ship"], &mut app.view
 `label`, `enabled`, `full_width`, and `id` are supported. The control clamps its segments to the
 available width and clips labels rather than overflowing its parent. Arrow keys move the selection:
 Up/Down backward/forward, Left/Right in reading order; Home/End jump to the first/last segment.
+The visible label is the AccessKit group name. Handled navigation keys are consumed, and
+`response.changed()` reports selection changes. Extremely narrow segments can clip their text;
+applications should provide a simpler choice UI when too many options would be unreadable.
 
 ### `Breadcrumb`
 
@@ -260,6 +277,9 @@ let response = Tab::new(egui::Id::unique("overview-tab"), "Overview", selected)
 
 `Role::Tab`, selected state, label, and enabled state are registered. Invalid or inverted geometry
 makes the tab inert instead of panicking.
+AccessKit receives the tab's `selected` property, rather than a checkbox-style toggle. Default focus
+uses `focus` on an ordinary tab and `on_primary` on a selected tab; set `focus_stroke` when painting
+another background. Tab-strip arrow behavior remains caller-owned because this is one tab primitive.
 
 Tab-width fitting (`tabs::fit` and `tabs::fit_whole`) is a separate pure algorithm. It preserves the
 selected tab, shrinks the widest tabs first, and reports overflow indices for an application-owned
@@ -296,6 +316,8 @@ ProgressBar::new(0.65)
 
 Values are clamped to `0.0..=1.0`; non-finite values become zero. `width` overrides the available
 width when it is positive. The label row stays compact even inside a tall `Ui`.
+The filled portion grows from the interface reading start (right edge in RTL). Accessible progress
+is a 0–100 percentage with explicit minimum and maximum.
 
 ### `LoadingIndicator`
 
@@ -409,6 +431,9 @@ if let Some(index) = result.activated {
 | `overflow` | Item indices listed in the overflow menu, in input order. |
 | `overflow_button_id` | Stable ID of the overflow trigger when shown. |
 
+The trigger response ID is explicitly scoped by `id.with("overflow-trigger")`; inserting an unrelated widget
+before the toolbar will not change its identity. IDs stay position-based for repeated items.
+
 `contains(index)` reports whether an index is reachable either visibly or through the menu. Items keep
 their natural widths. The overflow label is the actual count (`+3`, and correctly measured for
 `+100` and beyond) and drives the reserved width. Every item has a stable ID: visible item `i` is
@@ -417,6 +442,16 @@ their natural widths. The overflow label is the actual count (`+3`, and correctl
 Disabled items stay visible and named in both locations but cannot activate. If even the overflow
 control does not fit, `state` is `NoSpace`; nothing is painted and the caller must provide an explicit
 fallback such as a wrapping row or a compact menu. Do not silently hide commands.
+More than 4096 items also returns `NoSpace` before measuring labels. The overflow trigger's ID is
+derived from the toolbar's explicit ID, independently of unrelated sibling widgets. Item IDs remain
+position-based, so callers own focus restoration when their command collection is reordered.
+
+## Composition boundaries
+
+Dialogs, confirmation flows, popup/menu ownership, tables, and virtualized lists should currently use
+egui's `Modal`, `Popup`, menu, `Grid`, and `ScrollArea` primitives with the active theme. This audit
+found no demonstrated gap that justified duplicating them behind Faseela wrappers. Application
+commands, cancellation policy, collection identity, validation, and routing remain caller-owned.
 
 ### `toolbar`
 

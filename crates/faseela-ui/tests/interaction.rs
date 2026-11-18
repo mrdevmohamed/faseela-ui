@@ -454,3 +454,23 @@ fn selecting_a_popup_option_reports_change_on_the_select_response() {
         trigger.unwrap().with("popup")
     ));
 }
+
+#[test]
+fn empty_select_stays_named_and_never_invents_a_selection() {
+    let ctx = Context::default();
+    ctx.enable_accesskit();
+    let id = Id::unique("empty-select");
+    let mut selected = usize::MAX;
+    let mut response_id = None;
+    let response = frame(&ctx, vec![], |ui| {
+        let response = Select::new("Empty collection", &[], &mut selected)
+            .id(id)
+            .show(ui);
+        assert!(!response.changed());
+        assert!(response.enabled());
+        response_id = Some(response.id);
+    });
+    assert_eq!(selected, usize::MAX);
+    let node = node(&response, response_id.expect("select response"));
+    assert!(node.label().is_some());
+}

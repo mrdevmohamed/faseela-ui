@@ -94,6 +94,10 @@ context data, so there is no mutable global state.
 The `on_*` tokens are explicit per preset and tested. They are not derived from a luminance threshold
 at paint time. This matters because a fill can be dark enough to need white text in one preset and
 light enough to need dark text in another.
+Badge galleys are created with their actual semantic foreground; egui's galley colors take precedence
+over its fallback paint color. The tests inspect painted colors, not just token arithmetic. Similarly,
+egui's `visuals.selection.stroke` uses `on_primary` for selected text; it is not the keyboard-focus
+token. Custom focus outlines choose a contrasting foreground when inset over a filled control.
 
 `ThemeTokens::on_color(color)` chooses the higher-contrast of white and Faseela's dark ink
 (`#1D2B23`). It is a best-effort helper for arbitrary application colors: a mid-tone fill can still
@@ -139,6 +143,15 @@ the `on_*` fields.
 ## Fonts
 
 `install_arabic_font(&ctx)` installs Noto Sans Arabic before DejaVu Sans for proportional and
-monospace families. Call it once at startup, independently of the theme; see
-[Arabic support](arabic-support.md). The font installation replaces egui's font definitions, so call
-it after any other application font setup or merge that setup into the same definitions.
+monospace families, after existing application fonts. Call it at startup, independently of the
+theme; see [Arabic support](arabic-support.md). Installation adds fallbacks through egui's native
+`add_font` API and preserves custom font definitions. Repeated calls do not duplicate entries. If an
+application subsequently replaces all fonts with `set_fonts`, install the fallbacks again afterward.
+
+## Internal organization
+
+`theme/mod.rs` owns context installation, `tokens.rs` semantic roles, `presets.rs` the official palette
+and four presets, `color.rs` luminance/contrast/interpolation, and `fonts.rs` font installation. These
+are private implementation modules; public `theme::*` paths are unchanged. `ControlSize` provides the
+used button height/padding/font/radius conventions; shared form measurements live in `forms/common`.
+No unused spacing-token registry or parallel theme system is introduced.

@@ -162,13 +162,11 @@ impl<'a> Breadcrumb<'a> {
                         let last = index + 1 == items.len();
                         if last {
                             ui.label(RichText::new(*item).size(12.5).strong().color(tokens.text));
-                        } else if enabled {
+                        } else {
                             let link = breadcrumb_link(ui, id.with(("crumb", index)), item, tokens);
                             if link.clicked() {
                                 activated = Some(index);
                             }
-                        } else {
-                            ui.label(RichText::new(*item).size(12.5).color(tokens.disabled_text));
                         }
                     }
                 },

@@ -257,6 +257,7 @@ impl<'a> RadioGroup<'a> {
                             focused: response.has_focus(),
                             hovered: response.hovered(),
                             pressed: response.is_pointer_button_down_on(),
+                            invalid: self.error.is_some(),
                             tokens,
                             control_size: Vec2::splat(RADIO_SIZE),
                         },
@@ -362,6 +363,31 @@ impl<'a> Select<'a> {
             .unwrap_or(available_width)
             .min(available_width)
             .max(0.0);
+        if width < 24.0 {
+            let id_salt = self.id.unwrap_or_else(|| ui.next_auto_id());
+            return ui
+                .vertical(|ui| {
+                    ui.label(RichText::new(self.label).color(if enabled {
+                        tokens.text
+                    } else {
+                        tokens.disabled_text
+                    }));
+                    let (rect, _) =
+                        ui.allocate_exact_size(egui::vec2(width, 0.0), egui::Sense::hover());
+                    let response = ui.interact(rect, id_salt, egui::Sense::hover());
+                    response.widget_info(|| WidgetInfo::labeled(Role::ComboBox, false, self.label));
+                    ui.ctx().accesskit_node_builder(response.id, |node| {
+                        node.set_label(self.label);
+                        node.set_disabled();
+                        if self.error.is_some() {
+                            node.set_invalid(accesskit::Invalid::True);
+                        }
+                    });
+                    support_text(ui, self.helper, self.error, enabled, &response);
+                    response
+                })
+                .inner;
+        }
         let selected_text = self
             .options
             .get(*self.selected)

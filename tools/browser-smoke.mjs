@@ -78,6 +78,7 @@ try {
   const call = (method, params) => send(method, params, sessionId);
   await call("Page.enable");
   await call("Runtime.enable");
+  await call("Runtime.addBinding", { name: "faseelaReady" });
   const evaluate = async (expression) => {
     const result = await call("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
     assert(!result.exceptionDetails, JSON.stringify(result.exceptionDetails));
@@ -102,7 +103,15 @@ try {
     await settle();
   }
   const captures = [];
+  const visualHashes = new Set();
+  const hash = (data) => {
+    let value = 2166136261;
+    for (const byte of Buffer.from(data, "base64")) value = Math.imul(value ^ byte, 16777619);
+    return (value >>> 0).toString(16).padStart(8, "0");
+  };
   async function screenshot(name, width, height) {
+    await call("Input.dispatchMouseEvent", { type: "mouseMoved", x: width - 2, y: height - 2 });
+    await settle();
     const geometry = await evaluate(`(() => { const canvas = document.querySelector('canvas'); const rect = canvas.getBoundingClientRect(); return { width: innerWidth, height: innerHeight, canvasWidth: canvas.width, canvasHeight: canvas.height, left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, scrollWidth: document.documentElement.scrollWidth }; })()`);
     assert.equal(geometry.width, width);
     assert.equal(geometry.height, height);
@@ -115,12 +124,25 @@ try {
     assert(geometry.scrollWidth <= width);
     const { data } = await call("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     await writeFile(join(output, name + ".png"), Buffer.from(data, "base64"));
-    captures.push({ name, ...geometry });
+    const imageHash = hash(data);
+    visualHashes.add(imageHash);
+    captures.push({ name, ...geometry, imageHash });
+    return imageHash;
   }
   await resize(1280, 800);
-  await call("Page.addScriptToEvaluateOnNewDocument", { source: "window.faseelaStarted = new Promise(resolve => addEventListener('TrunkApplicationStarted', resolve, {once: true}));" });
+  await call("Page.addScriptToEvaluateOnNewDocument", { source: "addEventListener('TrunkApplicationStarted', () => window.faseelaReady(), {once: true})" });
+  const firstStart = new Promise((resolve) => {
+    const listener = ({ data }) => {
+      const message = JSON.parse(data);
+      if (message.sessionId === sessionId && message.method === "Runtime.bindingCalled" && message.params.name === "faseelaReady") {
+        socket.removeEventListener("message", listener);
+        resolve();
+      }
+    };
+    socket.addEventListener("message", listener);
+  });
   await call("Page.navigate", { url: address });
-  await evaluate("window.faseelaStarted");
+  await firstStart;
   await settle();
   await screenshot("desktop-overview", 1280, 800);
 
@@ -148,33 +170,55 @@ try {
   await screenshot("mobile-navigation-closed", 360, 640);
 
   if (process.env.FASEELA_BROWSER_MATRIX === "1") {
+    const stableSectionHashes = [];
+    const themeDirectionHashes = [];
     for (const [preset, presetX] of [["dark", 322], ["midnight", 417], ["forest", 495], ["light", 559]]) {
       for (const rtl of [false, true]) {
         await resize(1280, 800);
+        const started = new Promise((resolve) => {
+          const listener = ({ data }) => {
+            const message = JSON.parse(data);
+            if (message.sessionId === sessionId && message.method === "Runtime.bindingCalled" && message.params.name === "faseelaReady") {
+              socket.removeEventListener("message", listener);
+              resolve();
+            }
+          };
+          socket.addEventListener("message", listener);
+        });
         await call("Page.navigate", { url: address });
-        await evaluate("window.faseelaStarted");
+        await started;
         await settle();
         await click(90, 368); // Appearance
         await click(presetX, 180);
-        if (rtl) {
-          await click(90, 440);
-          await click(350, 178); // RTL button; subsequent section navigation moves to right sidebar.
-        }
+        await click(90, 440); // RTL & Arabic in the current LTR desktop sidebar.
+        if (rtl) await click(350, 178); // RTL; direction takes effect on the next frame.
+        let overviewHash;
         for (let section = 0; section < 10; section++) {
           await resize(1280, 800);
           await click(rtl ? 1160 : 90, 116 + section * 36);
           for (const [width, height] of viewports) {
             await resize(width, height);
-            await screenshot(`${preset}-${rtl ? "rtl" : "ltr"}-section-${section}-${width}x${height}`, width, height);
+            const imageHash = await screenshot(`${preset}-${rtl ? "rtl" : "ltr"}-section-${section}-${width}x${height}`, width, height);
+            if (width === 1280 && height === 800) {
+              if (section === 0) overviewHash = imageHash;
+              stableSectionHashes.push(imageHash);
+            }
           }
         }
+        themeDirectionHashes.push(overviewHash);
         console.log(`Captured all sections and viewports: ${preset} ${rtl ? "RTL" : "LTR"}`);
       }
     }
+    for (let index = 0; index < stableSectionHashes.length; index += 10) {
+      assert.equal(new Set(stableSectionHashes.slice(index, index + 10)).size, 10,
+        `Each of ten sections should paint a distinct desktop frame (#${index / 10})`);
+    }
+    assert.equal(new Set(themeDirectionHashes).size, 8, "All four themes and both directions should change the rendered overview");
   }
   assert.equal(errors.length, 0, JSON.stringify(errors, null, 2));
-  await writeFile(join(output, "results.json"), JSON.stringify({ captures, errors }, null, 2));
-  console.log(`${captures.length} production-browser captures; no JavaScript/WASM errors. ${output}`);
+  assert(visualHashes.size >= 8, `Expected real canvas updates; observed ${visualHashes.size} distinct images`);
+  await writeFile(join(output, "results.json"), JSON.stringify({ captures, distinctImages: visualHashes.size, errors }, null, 2));
+  console.log(`${captures.length} production-browser captures (${visualHashes.size} distinct); no JavaScript/WASM errors. ${output}`);
 } finally {
   socket?.close();
   const exited = new Promise((resolve) => chrome.once("exit", resolve));

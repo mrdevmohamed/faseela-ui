@@ -545,3 +545,37 @@ fn toolbar_item_ids_are_stable_in_ltr_and_rtl() {
         }
     }
 }
+
+#[test]
+fn toolbar_overflow_menu_ids_survive_layout_siblings() {
+    let ctx = setup(ThemePreset::Light, false, vec2(500.0, 200.0));
+    let id = Id::unique("repeatable-overflow");
+    let items = [
+        ToolbarItem::new("A long item"),
+        ToolbarItem::new("Another long item"),
+    ];
+    let mut trigger = None;
+    for preceding in [false, true] {
+        let (result, _) = toolbar_in_width(&ctx, vec2(500.0, 200.0), 120.0, id, &items);
+        if preceding {
+            let mut output = ctx.run_ui(
+                RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(500.0, 200.0))),
+                    ..Default::default()
+                },
+                |ui| {
+                    ui.label("unrelated");
+                    toolbar_response(ui, id, &items);
+                },
+            );
+            output.textures_delta.clear();
+            let next = ctx
+                .read_response(id.with("overflow-trigger"))
+                .expect("overflow response")
+                .id;
+            assert_eq!(trigger, Some(next));
+        } else {
+            trigger = result.overflow_button_id;
+        }
+    }
+}

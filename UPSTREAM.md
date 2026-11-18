@@ -22,7 +22,7 @@ Faseela-owned code and branding are separate.
 
 ## Ported components
 
-- `crates/faseela-ui/src/buttons.rs` adapts the icon-button interaction and accessibility model from
+- `crates/faseela-ui/src/buttons/icon.rs` adapts the icon-button interaction and accessibility model from
   [storytold/craft-libs](https://github.com/storytold/craft-libs/tree/main/crates/ui/src/buttons).
   The upstream component is distributed under MIT OR Apache-2.0. The port keeps application assets,
   styling values, selection state, and command handling owned by Faseela applications. The source
@@ -63,18 +63,24 @@ Faseela-owned code and branding are separate.
 
 ## Faseela-owned modules
 
-- `crates/faseela-ui/src/widgets.rs` is Faseela-owned code built on this repository's theme tokens
+Implementation is organized into private modules while keeping the original public paths:
+`buttons/{text,icon,style}`, `forms/{text,toggles,selection,options,common}`,
+`navigation/{group,segmented,breadcrumb}`, `widgets/{surface,badge,feedback,toolbar}`, and
+`theme/{tokens,presets,color,fonts}`. This is an internal-only refactor; it does not transfer
+application behavior into the reusable library.
+
+- `crates/faseela-ui/src/widgets/` is Faseela-owned code built on this repository's theme tokens
   and `layout::fit_toolbar`. It contains `Card`, `SectionHeader`, `Badge`, `ProgressBar`,
   `LoadingIndicator`, `StatusIndicator`, `Separator`, `Tooltip`, `EmptyState`, and the responsive
   `toolbar` / `toolbar_response` widgets. It copies no upstream source. The toolbar uses egui's
   public `MenuButton`/`Button` widgets so overflow commands stay reachable.
-- `crates/faseela-ui/src/forms.rs` is Faseela-owned. It builds text fields, search fields,
+- `crates/faseela-ui/src/forms/` is Faseela-owned. It builds text fields, search fields,
   checkboxes, switches, radio buttons, radio groups, and selects on egui's public `TextEdit`,
   `ComboBox`, and interaction APIs. It borrows application-owned values and does not introduce a
   form model or validation framework.
-- `crates/faseela-ui/src/navigation.rs` is Faseela-owned. It adds `ButtonGroup`, `SegmentedControl`,
+- `crates/faseela-ui/src/navigation/` is Faseela-owned. It adds `ButtonGroup`, `SegmentedControl`,
   and `Breadcrumb` with caller-owned selection and application-owned routing.
-- `crates/faseela-ui/src/theme.rs` design-token API is Faseela-owned. It keeps the official Faseela
+- `crates/faseela-ui/src/theme/` design-token API is Faseela-owned. It keeps the official Faseela
   palette from the first commit and adds coherent tokens for the other presets; no upstream theme
   code was copied. The WCAG relative-luminance and contrast-ratio functions follow the published
   WCAG 2.x formulas and are implemented locally.
@@ -87,13 +93,18 @@ Faseela-owned code and branding are separate.
   crate. Application strings must remain in logical Unicode order; call `text::display_text` only at
   the rendering boundary.
 - `theme::install_arabic_font` installs Noto Sans Arabic before DejaVu Sans for proportional and
-  monospace text. This follows Craft's Noto Sans Arabic-first approach for Arabic UI glyph coverage.
+  monospace text using egui's additive, lowest-priority fallback API. Existing application fonts
+  keep precedence, and repeated installation within a pass is deduplicated. This follows Craft's
+  Noto Sans Arabic-first approach for Arabic UI glyph coverage.
   Noto Sans Arabic is supplied by `uzor-fonts` (font data under SIL OFL 1.1; see that crate's
   `NOTICE`); DejaVu Sans is supplied by the `dejavu` crate and its redistribution notices are
   retained in [LICENSE-DejaVu.txt](LICENSE-DejaVu.txt).
 - The showcase installs the fallback in both native and WebAssembly startup paths and includes
   Arabic display and RTL interaction sections to exercise the rendering path. It does not claim full
   Arabic shaping, bidi editing, IME, or line-breaking support.
+- `LICENSE-Craft.txt` retains the upstream MIT notice alongside modified attributed modules;
+  `LICENSE-Noto.txt` records the Noto OFL, and `LICENSE-DejaVu.txt` is kept for the DejaVu font.
+  Cargo packages and Trunk output carry these notices; Faseela's MIT/Apache files remain separate.
 
 ## Compatibility
 
