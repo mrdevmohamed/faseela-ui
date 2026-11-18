@@ -184,13 +184,23 @@ The showcase is the integration test for these primitives:
 - The segmented control clamps to the available width and clips labels instead of expanding its
   parent.
 - Split preview panes keep physical geometry stable and swap logical pane order in RTL.
+- Button groups and breadcrumbs occupy a compact height in tall parents and wrap in narrow parents.
 - The toolbar's overflow menu remains reachable at every tested width.
+- Progress fills originate at the reading-start edge in RTL; split rectangles remain physical.
 
 Automated showcase tests render all ten sections at **320×568, 360×640, 390×844, 680×800, 768×1024,
 1280×800, and 1920×1080**, with all four themes and both directions. They assert that the used drawing
 width does not exceed the viewport, and they exercise desktop navigation, the mobile menu, theme
 switching, RTL persistence, buttons, forms, and progress controls. These tests are evidence against
 horizontal overflow in the showcase, not a universal guarantee for arbitrary application content.
+
+`node tools/browser-smoke.mjs` additionally runs the production WebAssembly in headless Chrome. It
+captures a basic representative section set plus all seven CSS viewport sizes, checks the canvas
+dimensions against the viewport and detects JS/WASM exceptions. `FASEELA_BROWSER_MATRIX=1` captures
+all ten sections × four themes × two directions × seven viewport sizes (560 full-matrix images).
+Captures are intended for visual review, not pixel-perfect cross-GPU comparison. Actual native
+platform screenshots, Android/iOS, touch devices, and browser screen-reader trees need separate
+manual device verification.
 
 ## Scope
 

@@ -218,8 +218,8 @@ Known limits:
   `accesskit` feature for native builds.
 - eframe 0.37's web backend does not expose per-widget AccessKit nodes to browser screen readers.
   Browser screen-reader verification still requires manual testing and is not claimed here.
-- Helper and error text is visible, but explicit description relationships beyond the accessible
-  name and invalid state are not guaranteed across backends.
+- Helper and error text is linked through AccessKit `described_by`; errors set invalid state.
+  Announcements and relationship delivery still depend on the platform backend.
 - Full Arabic text editing, bidi caret movement, line breaking, IME, and locale formatting are not
   implemented. See [docs/arabic-support.md](docs/arabic-support.md).
 
@@ -227,7 +227,8 @@ Known limits:
 
 - `direction::apply` sets the interface direction; `direction::row`, `trailing`, `start_align`,
   `start_x`, `end_x`, `forward`, and `step` keep layout and keyboard navigation logical.
-- `theme::install_arabic_font` installs bundled Noto Sans Arabic before DejaVu Sans.
+- `theme::install_arabic_font` adds bundled Noto Sans Arabic before DejaVu Sans as fallbacks,
+  preserving application-installed fonts.
 - `text::display_text` performs limited visual reordering and paired-punctuation mirroring for short
   display-only strings. Letter joining is left to egui's shaper.
 
@@ -263,12 +264,18 @@ trunk build --release
 
 ```bash
 cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-cargo check -p faseela-ui-showcase
-cargo check -p faseela-ui-showcase --target wasm32-unknown-unknown
-RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
-cargo package -p faseela-ui --allow-dirty
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo check --workspace --all-targets --locked
+cargo test --workspace --locked
+cargo check -p faseela-ui-showcase --locked
+cargo check -p faseela-ui-showcase --locked --target wasm32-unknown-unknown
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+cargo package -p faseela-ui --locked
+cargo +1.95.0 check --workspace --all-targets --locked
+# After building the production showcase with Trunk:
+node tools/browser-smoke.mjs
+# Optional full browser capture matrix (560 combinations plus smoke captures):
+FASEELA_BROWSER_MATRIX=1 node tools/browser-smoke.mjs
 ```
 
 CI additionally checks the MSRV toolchain (1.95) and performs a release Trunk build. GitHub Pages
@@ -278,6 +285,29 @@ deployment remains in `.github/workflows/pages.yml`.
 
 - `crates/faseela-ui`: the reusable library.
 - `examples/showcase`: the native/WebAssembly application used for visual and interaction testing.
+
+The public modules keep their original import paths. Implementation is organized by responsibility:
+
+```text
+crates/faseela-ui/src/          examples/showcase/src/
+  buttons/{text,icon,style}      main.rs
+  forms/{text,toggles,           startup.rs
+         selection,options}     app/
+  navigation/{group,              mod.rs          # caller-owned state and frame orchestration
+              segmented,         shell.rs        # responsive shells and scrolling
+              breadcrumb}        navigation.rs   # section metadata and navigation
+  widgets/{surface,badge,         helpers.rs      # application-only presentation
+           feedback,toolbar}     demos/          # cohesive component demonstrations
+  theme/{tokens,presets,          tests.rs
+         color,fonts}
+  layout/{geometry,resize,toolbar}
+  direction.rs, icons.rs, tabs.rs, text.rs, lib.rs
+```
+
+Module `mod.rs` files re-export the existing public APIs; component implementations remain private.
+Tests that verify cross-component behavior use the public API in `crates/faseela-ui/tests`.
+See [verification and maintenance notes](docs/verification.md) for audit findings, visual review
+instructions, and the distinction between automated evidence and platform validation.
 
 Application-specific docking trees, command registries, document models, routing, persistence, and
 business rules remain outside this crate.
@@ -308,7 +338,13 @@ Migration from an early Faseela UI checkout:
 3. Prefer `toolbar_response` when you need overflow state; existing `toolbar` callers continue to
    receive `Option<usize>`.
 4. Call `theme::install_arabic_font` once at startup if you display Arabic labels, and keep logical
-   text separate from `display_text` output.
+    text separate from `display_text` output.
+
+The module refactor introduces no public signature changes. Behavior corrections include compact
+navigation rows, label-independent default option IDs, `changed()` on selection responses, and font
+installation that preserves existing fonts. Index-derived IDs track positions; use application-owned
+scopes/IDs for dynamic collections that reorder items. The selected-text foreground now uses
+`on_primary`; custom tab painters should provide their own focus stroke when using a different fill.
 
 ## Upstream inspiration
 
@@ -319,3 +355,6 @@ Apache-2.0. Faseela-owned modules and changes are documented in [UPSTREAM.md](UP
 ## License
 
 MIT OR Apache-2.0. See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE).
+Craft attribution is retained in [LICENSE-Craft.txt](LICENSE-Craft.txt). Embedded fonts retain their
+own terms in [LICENSE-Noto.txt](LICENSE-Noto.txt) and [LICENSE-DejaVu.txt](LICENSE-DejaVu.txt).
+These notices ship with the Cargo package and the production showcase distribution.

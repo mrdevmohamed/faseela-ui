@@ -29,7 +29,7 @@ jobs:
           tool: trunk
       - name: Build WebAssembly showcase
         working-directory: examples/showcase
-        run: trunk build --release --public-url /faseela-ui/ --dist ../../dist
+        run: trunk build --release --locked --public-url /faseela-ui/ --dist ../../dist
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

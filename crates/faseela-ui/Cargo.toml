@@ -6,6 +6,7 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "Reusable Rust UI components and design foundations for Faseela applications."
+readme = "../../README.md"
 
 [dependencies]
 egui.workspace = true

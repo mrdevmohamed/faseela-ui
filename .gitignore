@@ -1,4 +1,5 @@
 /target
+examples/showcase/target/
 **/*.rs.bk
 .DS_Store
 /dist

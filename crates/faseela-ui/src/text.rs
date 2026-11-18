@@ -225,4 +225,44 @@ mod tests {
             assert!(visual.contains(digit), "lost {digit:?} in {visual:?}");
         }
     }
+
+    #[test]
+    fn persian_join_controls_and_decomposed_graphemes_are_not_normalized() {
+        for logical in ["می\u{200c}روم فارسی", "کد test_id ۱۲۳", "عربي e\u{301} 👩🏽‍💻"]
+        {
+            let original = logical.to_owned();
+            let display = display_text(logical);
+            for cluster in logical
+                .graphemes(true)
+                .filter(|cluster| !cluster.trim().is_empty())
+            {
+                assert!(display.contains(cluster), "lost {cluster:?} in {display:?}");
+            }
+            assert_eq!(logical, original);
+        }
+    }
+
+    #[test]
+    fn crlf_and_trailing_empty_lines_are_preserved() {
+        assert_eq!(
+            display_text("السلام عليكم\r\nFaseela\r\n\r\n"),
+            "عليكم السلام\r\nFaseela\r\n\r\n"
+        );
+    }
+
+    #[test]
+    fn unicode_controls_and_separator_only_inputs_do_not_panic() {
+        for logical in [
+            "\u{2067}عربي 123\u{2069} Latin",
+            "\u{202a}\u{202c}",
+            "\u{2029}",
+            "\u{200f}",
+            "\u{0301}",
+            "\0",
+            "\t\r\n",
+        ] {
+            let display = display_text(logical);
+            assert_eq!(display.chars().count(), logical.chars().count());
+        }
+    }
 }

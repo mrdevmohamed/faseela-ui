@@ -222,7 +222,7 @@ impl<'a> Tab<'a> {
         self
     }
 
-    /// Set the inset keyboard-focus outline. By default egui's selection stroke is used.
+    /// Set the inset keyboard-focus outline. Defaults to theme focus, or `on_primary` when selected.
     /// Passing `Stroke::NONE` disables the outline.
     pub fn focus_stroke(mut self, stroke: egui::Stroke) -> Self {
         self.focus_stroke = Some(stroke);
@@ -267,6 +267,10 @@ impl<'a> Tab<'a> {
                 self.label,
             )
         });
+        ui.ctx().accesskit_node_builder(response.id, |node| {
+            node.clear_toggled();
+            node.set_selected(self.selected);
+        });
 
         if !valid {
             return response;
@@ -276,7 +280,17 @@ impl<'a> Tab<'a> {
 
         if response.has_focus() && rect.width() > 4.0 && rect.height() > 4.0 {
             let focus = rect.shrink(2.0);
-            let stroke = self.focus_stroke.unwrap_or(ui.visuals().selection.stroke);
+            let tokens = crate::theme::active_tokens(ui.ctx());
+            let stroke = self.focus_stroke.unwrap_or_else(|| {
+                egui::Stroke::new(
+                    2.0,
+                    if self.selected {
+                        tokens.on_primary
+                    } else {
+                        tokens.focus
+                    },
+                )
+            });
             if stroke.width.is_finite() && stroke.width > 0.0 {
                 let stroke = egui::Stroke::new(
                     stroke.width.min(focus.width().min(focus.height()) * 0.5),

@@ -13,7 +13,10 @@
 - [Project README](../README.md): installation, quick start, verification, compatibility, and
   versioning.
 - [Upstream attribution](../UPSTREAM.md): Craft-derived code, Faseela-owned modules, and licenses.
+- [Verification and maintenance](verification.md): audit findings, architecture, reproducible
+  browser captures, test scope, and release checks.
 
 The interactive WebAssembly showcase is published at
 <https://mrdevmohamed.github.io/faseela-ui/>. Its source is
-[`examples/showcase/src/main.rs`](../examples/showcase/src/main.rs).
+[`examples/showcase/src/app`](../examples/showcase/src/app), with platform entry points in
+[`startup.rs`](../examples/showcase/src/startup.rs).
