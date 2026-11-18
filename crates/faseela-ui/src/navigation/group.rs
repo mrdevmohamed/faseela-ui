@@ -101,8 +101,12 @@ impl<'a> ButtonGroup<'a> {
         let mut activated = None;
 
         let group = ui.scope_builder(egui::UiBuilder::new().scope_id(id), |ui| {
-            ui.with_layout(direction::row(ui), |ui| {
-                ui.horizontal_wrapped(|ui| {
+            // `with_layout` inherits the full remaining height. A centered nested row would
+            // place these buttons halfway down a tall parent. Allocate one compact row instead.
+            ui.allocate_ui_with_layout(
+                egui::vec2(ui.available_width().max(0.0), size.height()),
+                direction::row(ui).with_main_wrap(true),
+                |ui| {
                     for (index, label) in labels.iter().enumerate() {
                         let is_selected = selected == index;
                         let response = Button::new(*label)
@@ -116,10 +120,10 @@ impl<'a> ButtonGroup<'a> {
                             activated = Some(index);
                         }
                     }
-                })
-            })
+                },
+            )
         });
-        let mut response = group.inner.inner.response;
+        let mut response = group.inner.response;
         if *self.selected != selected {
             response.mark_changed();
         }

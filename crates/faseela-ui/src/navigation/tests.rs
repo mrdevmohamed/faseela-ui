@@ -255,3 +255,31 @@ fn every_navigation_widget_renders_in_all_themes_and_directions() {
         }
     }
 }
+
+#[test]
+fn navigation_rows_stay_compact_in_tall_containers_and_wrap_when_needed() {
+    for rtl in [false, true] {
+        let ctx = setup(ThemePreset::Light, rtl);
+        let mut selected = 0;
+        frame(&ctx, vec![], |ui| {
+            let group = ButtonGroup::new(&["Columns", "Rows"], &mut selected).show(ui);
+            assert!(
+                group.response.rect.height() <= 42.0,
+                "{:?}",
+                group.response.rect
+            );
+            let breadcrumb = Breadcrumb::new(&["Home", "Library", "Current"]).show(ui);
+            assert!(
+                breadcrumb.response.rect.height() <= 42.0,
+                "{:?}",
+                breadcrumb.response.rect
+            );
+        });
+        frame(&ctx, vec![], |ui| {
+            ui.set_width(80.0);
+            let group = ButtonGroup::new(&["Columns", "Rows", "Panes"], &mut selected).show(ui);
+            assert!(group.response.rect.height() > 32.0, "must wrap");
+            assert!(group.response.rect.width() <= 80.1);
+        });
+    }
+}

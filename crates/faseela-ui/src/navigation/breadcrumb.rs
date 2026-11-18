@@ -147,8 +147,10 @@ impl<'a> Breadcrumb<'a> {
         let mut activated = None;
 
         let group = ui.scope_builder(egui::UiBuilder::new().scope_id(id), |ui| {
-            ui.with_layout(direction::row(ui), |ui| {
-                ui.horizontal_wrapped(|ui| {
+            ui.allocate_ui_with_layout(
+                vec2(ui.available_width().max(0.0), ui.spacing().interact_size.y),
+                direction::row(ui).with_main_wrap(true),
+                |ui| {
                     for (index, item) in items.iter().enumerate() {
                         if index > 0 {
                             ui.label(
@@ -169,10 +171,10 @@ impl<'a> Breadcrumb<'a> {
                             ui.label(RichText::new(*item).size(12.5).color(tokens.disabled_text));
                         }
                     }
-                })
-            })
+                },
+            )
         });
-        let response = group.inner.inner.response;
+        let response = group.inner.response;
         response
             .widget_info(|| WidgetInfo::labeled(Role::Navigation, enabled, self.accessible_label));
         BreadcrumbResponse {
