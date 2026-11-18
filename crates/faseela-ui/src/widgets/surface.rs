@@ -215,20 +215,27 @@ impl Separator {
         let tokens = theme::active_tokens(ui.ctx());
         let size = match self.orientation {
             SeparatorOrientation::Horizontal => {
-                let width = self.length.unwrap_or_else(|| ui.available_width().max(0.0));
+                let available = ui.available_width().max(0.0);
+                let width = self.length.unwrap_or(available).min(available);
                 vec2(width.max(0.0), 1.0)
             }
             SeparatorOrientation::Vertical => vec2(1.0, self.length.unwrap_or(20.0)),
         };
         let (rect, response) = ui.allocate_exact_size(size, Sense::hover());
+        let inset = self.inset.min(
+            match self.orientation {
+                SeparatorOrientation::Horizontal => rect.width(),
+                SeparatorOrientation::Vertical => rect.height(),
+            } * 0.5,
+        );
         let line_rect = match self.orientation {
             SeparatorOrientation::Horizontal => egui::Rect::from_min_max(
-                egui::pos2(rect.left() + self.inset, rect.center().y),
-                egui::pos2(rect.right() - self.inset, rect.center().y),
+                egui::pos2(rect.left() + inset, rect.center().y),
+                egui::pos2(rect.right() - inset, rect.center().y),
             ),
             SeparatorOrientation::Vertical => egui::Rect::from_min_max(
-                egui::pos2(rect.center().x, rect.top() + self.inset),
-                egui::pos2(rect.center().x, rect.bottom() - self.inset),
+                egui::pos2(rect.center().x, rect.top() + inset),
+                egui::pos2(rect.center().x, rect.bottom() - inset),
             ),
         };
         if line_rect.width().is_finite() && line_rect.height().is_finite() {

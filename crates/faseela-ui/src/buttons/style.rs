@@ -122,11 +122,11 @@ impl IconButtonStyle {
     ///
     /// This keeps icon-only controls visually consistent with [`super::Button`] variants and sizes.
     pub fn themed(tokens: ThemeTokens, variant: ButtonVariant, size: ControlSize) -> Self {
-        let normal = variant_visuals(tokens, variant, InteractionState::normal(size));
-        let hovered = variant_visuals(tokens, variant, InteractionState::hovered(size));
-        let pressed = variant_visuals(tokens, variant, InteractionState::pressed(size));
-        let selected = variant_visuals(tokens, variant, InteractionState::selected(size));
-        let disabled = variant_visuals(tokens, variant, InteractionState::disabled(size));
+        let normal = variant_visuals(tokens, variant, InteractionState::normal());
+        let hovered = variant_visuals(tokens, variant, InteractionState::hovered());
+        let pressed = variant_visuals(tokens, variant, InteractionState::pressed());
+        let selected = variant_visuals(tokens, variant, InteractionState::selected());
+        let disabled = variant_visuals(tokens, variant, InteractionState::disabled());
         Self {
             normal,
             hovered,
@@ -144,46 +144,44 @@ pub(super) struct InteractionState {
     pub(super) pressed: bool,
     pub(super) selected: bool,
     pub(super) disabled: bool,
-    pub(super) size: ControlSize,
 }
 
 impl InteractionState {
-    pub(super) const fn normal(size: ControlSize) -> Self {
+    pub(super) const fn normal() -> Self {
         Self {
             hovered: false,
             pressed: false,
             selected: false,
             disabled: false,
-            size,
         }
     }
 
-    pub(super) const fn hovered(size: ControlSize) -> Self {
+    pub(super) const fn hovered() -> Self {
         Self {
             hovered: true,
-            ..Self::normal(size)
+            ..Self::normal()
         }
     }
 
-    pub(super) const fn pressed(size: ControlSize) -> Self {
+    pub(super) const fn pressed() -> Self {
         Self {
             hovered: true,
             pressed: true,
-            ..Self::normal(size)
+            ..Self::normal()
         }
     }
 
-    pub(super) const fn selected(size: ControlSize) -> Self {
+    pub(super) const fn selected() -> Self {
         Self {
             selected: true,
-            ..Self::normal(size)
+            ..Self::normal()
         }
     }
 
-    pub(super) const fn disabled(size: ControlSize) -> Self {
+    pub(super) const fn disabled() -> Self {
         Self {
             disabled: true,
-            ..Self::normal(size)
+            ..Self::normal()
         }
     }
 }
@@ -194,7 +192,6 @@ pub(super) fn variant_visuals(
     variant: ButtonVariant,
     state: InteractionState,
 ) -> ButtonVisuals {
-    let _ = state.size;
     if state.disabled {
         return ButtonVisuals {
             fill: tokens.disabled,

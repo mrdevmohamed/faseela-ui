@@ -137,10 +137,19 @@ impl Showcase {
                 .size(ControlSize::Small)
                 .id(Id::unique("showcase-tooltip"))
                 .show(ui);
+            if tooltip_response.clicked() {
+                self.last_action =
+                    "Tooltip action activated; supporting text is available below.".to_owned();
+            }
             let _ = Tooltip::new(
-                "Tooltips are keyboard-adjacent supporting text; the visible label still names the control.",
+                "Tooltips provide pointer-hover details. Essential information stays visible below.",
             )
             .show(tooltip_response);
+            ui.label(
+                RichText::new(&self.last_action)
+                    .small()
+                    .color(tokens.muted_text),
+            );
         });
     }
 }

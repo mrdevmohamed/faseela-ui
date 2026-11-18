@@ -27,7 +27,7 @@ impl Showcase {
     }
 
     pub(super) fn desktop_shell(&mut self, ui: &mut Ui, available: Vec2) {
-        ui.horizontal(|ui| {
+        faseela_ui::direction::horizontal(ui, |ui| {
             let sidebar_width = if available.x >= 1100.0 {
                 232.0
             } else {

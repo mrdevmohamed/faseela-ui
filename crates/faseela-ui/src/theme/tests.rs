@@ -54,6 +54,8 @@ fn every_preset_sets_widget_foregrounds_and_borders() {
         assert_eq!(visuals.widgets.active.fg_stroke.color, tokens.on_primary);
         assert_eq!(visuals.widgets.hovered.bg_fill, tokens.hover);
         assert_eq!(visuals.selection.bg_fill, tokens.selection);
+        assert_eq!(visuals.selection.stroke.color, tokens.on_primary);
+        assert!(contrast_ratio(visuals.selection.stroke.color, visuals.selection.bg_fill) >= 4.5);
         assert_eq!(visuals.error_fg_color, tokens.error);
         assert_eq!(visuals.warn_fg_color, tokens.warning);
         assert_eq!(
@@ -62,6 +64,56 @@ fn every_preset_sets_widget_foregrounds_and_borders() {
         );
         assert!(visuals.window_stroke.width > 0.0);
     }
+}
+
+#[test]
+fn font_installation_preserves_application_fonts_and_is_idempotent() {
+    use egui::{FontData, FontDefinitions, FontFamily};
+    use std::sync::Arc;
+    let ctx = Context::default();
+    let mut definitions = FontDefinitions::default();
+    definitions.font_data.insert(
+        "application-font".to_owned(),
+        Arc::new(FontData::from_static(dejavu::sans::regular())),
+    );
+    definitions
+        .families
+        .entry(FontFamily::Proportional)
+        .or_default()
+        .insert(0, "application-font".to_owned());
+    ctx.set_fonts(definitions);
+    install_arabic_font(&ctx);
+    install_arabic_font(&ctx);
+    let mut output = ctx.run_ui(Default::default(), |ui| {
+        ui.fonts(|fonts| {
+            let definitions = fonts.definitions();
+            assert!(definitions.font_data.contains_key("application-font"));
+            for family in [FontFamily::Proportional, FontFamily::Monospace] {
+                let names = &definitions.families[&family];
+                let arabic = names
+                    .iter()
+                    .position(|name| name == "faseela-noto-sans-arabic")
+                    .unwrap();
+                let dejavu = names
+                    .iter()
+                    .position(|name| name == "faseela-arabic-fallback")
+                    .unwrap();
+                assert!(arabic < dejavu);
+                assert_eq!(
+                    names
+                        .iter()
+                        .filter(|name| *name == "faseela-noto-sans-arabic")
+                        .count(),
+                    1
+                );
+            }
+            assert_eq!(
+                definitions.families[&FontFamily::Proportional][0],
+                "application-font"
+            );
+        });
+    });
+    output.textures_delta.clear();
 }
 
 #[test]

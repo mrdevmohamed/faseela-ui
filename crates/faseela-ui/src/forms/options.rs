@@ -25,9 +25,13 @@ pub(super) fn allocate_option_row(
     id: Id,
     control_size: f32,
 ) -> OptionRow {
+    allocate_row(ui, label, id, Vec2::splat(control_size))
+}
+
+fn allocate_row(ui: &mut Ui, label: &str, id: Id, control_size: Vec2) -> OptionRow {
     let available = ui.available_width().max(0.0);
     let tokens = theme::active_tokens(ui.ctx());
-    let width = (available - control_size - ROW_GAP).max(24.0);
+    let width = (available - control_size.x - ROW_GAP).max(1.0);
     let galley = label_galley(
         ui,
         label,
@@ -35,7 +39,9 @@ pub(super) fn allocate_option_row(
         tokens.text,
         width,
     );
-    let height = (galley.rect.height() + 8.0).max(26.0);
+    let height = (galley.rect.height() + 8.0)
+        .max(control_size.y + 6.0)
+        .max(26.0);
     let (_, rect) = ui.allocate_space(vec2(available, height));
     let response = ui.interact(rect, id, Sense::click());
     (rect, response)
@@ -49,28 +55,7 @@ pub(super) fn option_row(
     selected: bool,
     control_size: f32,
 ) -> Response {
-    let tokens = theme::active_tokens(ui.ctx());
-    let enabled = ui.is_enabled();
-    let id = id.unwrap_or_else(|| {
-        ui.scope_id()
-            .with(("option-row", label, control_size as u32))
-    });
-    let (rect, response) = allocate_option_row(ui, label, id, control_size);
-    response.widget_info(|| WidgetInfo::selected(role_for(kind), enabled, selected, label));
-    paint_option_rect(
-        ui,
-        rect,
-        OptionPaint {
-            label,
-            kind,
-            selected,
-            enabled,
-            focused: response.has_focus(),
-            tokens,
-            control_size: Vec2::splat(control_size),
-        },
-    );
-    response
+    option_row_with_control(ui, label, id, kind, selected, Vec2::splat(control_size))
 }
 
 pub(super) fn option_row_with_control(
@@ -83,21 +68,9 @@ pub(super) fn option_row_with_control(
 ) -> Response {
     let tokens = theme::active_tokens(ui.ctx());
     let enabled = ui.is_enabled();
-    let id = id.unwrap_or_else(|| ui.scope_id().with(("option-row-switch", label)));
-    let available = ui.available_width().max(0.0);
-    let width = (available - control_size.x - ROW_GAP).max(24.0);
-    let galley = label_galley(
-        ui,
-        label,
-        FontId::proportional(FIELD_FONT_SIZE),
-        tokens.text,
-        width,
-    );
-    let height = (galley.rect.height() + 8.0)
-        .max(control_size.y + 6.0)
-        .max(26.0);
-    let (_, rect) = ui.allocate_space(vec2(available, height));
-    let response = ui.interact(rect, id, Sense::click());
+    let id = id.unwrap_or_else(|| ui.next_auto_id());
+    let (rect, response) = allocate_row(ui, label, id, control_size);
+    let selected = selected ^ (kind != ControlKind::Radio && response.clicked());
     response.widget_info(|| WidgetInfo::selected(role_for(kind), enabled, selected, label));
     paint_option_rect(
         ui,
@@ -108,6 +81,8 @@ pub(super) fn option_row_with_control(
             selected,
             enabled,
             focused: response.has_focus(),
+            hovered: response.hovered(),
+            pressed: response.is_pointer_button_down_on(),
             tokens,
             control_size,
         },
@@ -129,6 +104,8 @@ pub(super) struct OptionPaint<'a> {
     pub(super) selected: bool,
     pub(super) enabled: bool,
     pub(super) focused: bool,
+    pub(super) hovered: bool,
+    pub(super) pressed: bool,
     pub(super) tokens: ThemeTokens,
     pub(super) control_size: Vec2,
 }
@@ -140,9 +117,13 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
         selected,
         enabled,
         focused,
+        hovered,
+        pressed,
         tokens,
         control_size,
     } = paint;
+    // A tiny parent may clip the control, but must never paint outside its own allocation.
+    let painter = ui.painter().with_clip_rect(ui.clip_rect().intersect(rect));
     let rtl = direction::is_rtl(ui);
     let control_rect = if rtl {
         egui::Rect::from_min_size(
@@ -186,9 +167,17 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
         label_left
     };
     let text_pos = egui::pos2(text_x, rect.center().y - galley.rect.height() * 0.5);
-    ui.painter()
-        .with_clip_rect(rect)
-        .galley_with_override_text_color(text_pos, galley, color);
+    painter.galley_with_override_text_color(text_pos, galley, color);
+
+    let idle_fill = if !enabled {
+        tokens.disabled
+    } else if pressed {
+        tokens.hover
+    } else if hovered {
+        tokens.elevated_surface
+    } else {
+        tokens.surface
+    };
 
     match kind {
         ControlKind::CheckBox => {
@@ -198,10 +187,8 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
                 } else {
                     tokens.disabled
                 }
-            } else if enabled {
-                tokens.surface
             } else {
-                tokens.disabled
+                idle_fill
             };
             let border = if !enabled {
                 tokens.border
@@ -210,7 +197,7 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
             } else {
                 tokens.control_border
             };
-            ui.painter().rect(
+            painter.rect(
                 control_rect,
                 CornerRadius::same(4),
                 fill,
@@ -226,18 +213,14 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
                 let a = control_rect.left_top() + vec2(4.0, 9.0);
                 let b = control_rect.left_top() + vec2(7.5, 12.5);
                 let c = control_rect.left_top() + vec2(14.0, 5.5);
-                ui.painter().line_segment([a, b], Stroke::new(2.0, mark));
-                ui.painter().line_segment([b, c], Stroke::new(2.0, mark));
+                painter.line_segment([a, b], Stroke::new(2.0, mark));
+                painter.line_segment([b, c], Stroke::new(2.0, mark));
             }
         }
         ControlKind::Radio => {
             let center = control_rect.center();
             let radius = control_rect.width() * 0.5;
-            let fill = if enabled {
-                tokens.surface
-            } else {
-                tokens.disabled
-            };
+            let fill = idle_fill;
             let border = if !enabled {
                 tokens.border
             } else if focused {
@@ -245,14 +228,14 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
             } else {
                 tokens.control_border
             };
-            ui.painter().circle_filled(center, radius, fill);
-            ui.painter().circle_stroke(
+            painter.circle_filled(center, radius, fill);
+            painter.circle_stroke(
                 center,
                 radius - 0.5,
                 Stroke::new(if focused { 2.0 } else { 1.5 }, border),
             );
             if selected {
-                ui.painter().circle_filled(
+                painter.circle_filled(
                     center,
                     radius * 0.52,
                     if enabled {
@@ -271,10 +254,8 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
                 } else {
                     tokens.disabled
                 }
-            } else if enabled {
-                tokens.elevated_surface
             } else {
-                tokens.disabled
+                idle_fill
             };
             let border = if !enabled {
                 tokens.border
@@ -283,7 +264,7 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
             } else {
                 tokens.control_border
             };
-            ui.painter().rect(
+            painter.rect(
                 track,
                 CornerRadius::same((track.height() * 0.5) as u8),
                 fill,
@@ -291,7 +272,7 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
                 StrokeKind::Inside,
             );
             let knob_radius = track.height() * 0.5 - 4.0;
-            let knob_x = if selected {
+            let knob_x = if selected != rtl {
                 track.right() - knob_radius - 3.0
             } else {
                 track.left() + knob_radius + 3.0
@@ -307,7 +288,7 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
             } else {
                 tokens.disabled_text
             };
-            ui.painter().circle_filled(
+            painter.circle_filled(
                 egui::pos2(knob_x, track.center().y),
                 knob_radius,
                 knob_color,
@@ -316,12 +297,12 @@ pub(super) fn paint_option_rect(ui: &Ui, rect: egui::Rect, paint: OptionPaint<'_
     }
 
     if focused {
-        let focus_rect = control_rect.expand(2.0);
-        ui.painter().rect_stroke(
+        let focus_rect = rect.shrink(0.75);
+        painter.rect_stroke(
             focus_rect,
             CornerRadius::same(5),
             Stroke::new(1.5, tokens.focus),
-            StrokeKind::Outside,
+            StrokeKind::Inside,
         );
     }
 }

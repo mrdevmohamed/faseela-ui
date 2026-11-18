@@ -2,7 +2,8 @@
 use super::SelectionResponse;
 use crate::{direction, theme};
 use egui::{
-    CornerRadius, FontId, Id, RichText, Role, Sense, Stroke, StrokeKind, Ui, WidgetInfo, pos2, vec2,
+    CornerRadius, EventFilter, FontId, Id, RichText, Role, Sense, Stroke, StrokeKind, Ui,
+    WidgetInfo, pos2, vec2,
 };
 
 const LABEL_FONT_SIZE: f32 = 13.0;
@@ -202,27 +203,44 @@ impl<'a> SegmentedControl<'a> {
                         .find(|(_, _, _, response)| response.has_focus())
                         .map(|(index, _, _, _)| *index);
                     if let Some(current) = focused {
+                        ui.memory_mut(|memory| {
+                            memory.set_focus_lock_filter(
+                                segments[current].3.id,
+                                EventFilter {
+                                    horizontal_arrows: true,
+                                    vertical_arrows: true,
+                                    ..Default::default()
+                                },
+                            )
+                        });
                         let mut target = None;
-                        ui.input(|input| {
-                            if input.key_pressed(egui::Key::Home) {
+                        ui.input_mut(|input| {
+                            if input.consume_key(egui::Modifiers::NONE, egui::Key::Home) {
                                 target = Some(0);
-                            } else if input.key_pressed(egui::Key::End) {
+                            } else if input.consume_key(egui::Modifiers::NONE, egui::Key::End) {
                                 target = Some(labels.len() - 1);
-                            } else if input.key_pressed(egui::Key::ArrowUp) {
+                            } else if input.consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp) {
                                 target = Some(previous(current, labels.len()));
-                            } else if input.key_pressed(egui::Key::ArrowDown) {
+                            } else if input.consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown)
+                            {
                                 target = Some(next(current, labels.len()));
-                            } else if input.key_pressed(if rtl {
-                                egui::Key::ArrowRight
-                            } else {
-                                egui::Key::ArrowLeft
-                            }) {
+                            } else if input.consume_key(
+                                egui::Modifiers::NONE,
+                                if rtl {
+                                    egui::Key::ArrowRight
+                                } else {
+                                    egui::Key::ArrowLeft
+                                },
+                            ) {
                                 target = Some(previous(current, labels.len()));
-                            } else if input.key_pressed(if rtl {
-                                egui::Key::ArrowLeft
-                            } else {
-                                egui::Key::ArrowRight
-                            }) {
+                            } else if input.consume_key(
+                                egui::Modifiers::NONE,
+                                if rtl {
+                                    egui::Key::ArrowLeft
+                                } else {
+                                    egui::Key::ArrowRight
+                                },
+                            ) {
                                 target = Some(next(current, labels.len()));
                             }
                         });
@@ -252,20 +270,29 @@ impl<'a> SegmentedControl<'a> {
                 for (index, label, segment_rect, response) in &segments {
                     let is_selected = selected == *index;
                     let segment_rect = segment_rect.intersect(inner_rect);
-                    if is_selected {
+                    if !segment_rect.is_positive() {
+                        continue;
+                    }
+                    if is_selected
+                        || (enabled && (response.hovered() || response.is_pointer_button_down_on()))
+                    {
                         ui.painter().rect_filled(
                             segment_rect,
                             CornerRadius::same(7),
-                            if enabled {
-                                tokens.selection
-                            } else {
+                            if !enabled {
                                 tokens.disabled
+                            } else if is_selected {
+                                tokens.selection
+                            } else if response.is_pointer_button_down_on() {
+                                tokens.active
+                            } else {
+                                tokens.hover
                             },
                         );
                     }
                     let foreground = if !enabled {
                         tokens.disabled_text
-                    } else if is_selected {
+                    } else if is_selected || response.is_pointer_button_down_on() {
                         tokens.on_primary
                     } else {
                         tokens.text
@@ -282,8 +309,12 @@ impl<'a> SegmentedControl<'a> {
                         galley,
                         foreground,
                     );
-                    if *index + 1 < segments.len() && !is_selected && !rtl {
-                        let x = segment_rect.right();
+                    if *index + 1 < segments.len() && !is_selected {
+                        let x = if rtl {
+                            segment_rect.left()
+                        } else {
+                            segment_rect.right()
+                        };
                         ui.painter().line_segment(
                             [pos2(x, inner_rect.top()), pos2(x, inner_rect.bottom())],
                             Stroke::new(1.0, tokens.border),
@@ -293,7 +324,14 @@ impl<'a> SegmentedControl<'a> {
                         ui.painter().rect_stroke(
                             segment_rect.shrink(1.0),
                             CornerRadius::same(6),
-                            Stroke::new(2.0, tokens.focus),
+                            Stroke::new(
+                                2.0,
+                                if is_selected {
+                                    tokens.on_primary
+                                } else {
+                                    tokens.focus
+                                },
+                            ),
                             StrokeKind::Inside,
                         );
                     }
@@ -303,12 +341,20 @@ impl<'a> SegmentedControl<'a> {
                 }
 
                 group_response.widget_info(|| {
-                    WidgetInfo::labeled(Role::RadioGroup, enabled, "Segmented control")
+                    WidgetInfo::labeled(
+                        Role::RadioGroup,
+                        enabled,
+                        self.label.unwrap_or("Segmented control"),
+                    )
                 });
                 group_response
             })
             .inner;
 
+        let mut response = response;
+        if *self.selected != selected {
+            response.mark_changed();
+        }
         *self.selected = selected;
         SelectionResponse {
             response,

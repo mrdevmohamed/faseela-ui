@@ -50,7 +50,7 @@ impl Showcase {
         ui.add_space(12.0);
         card(ui, |ui| {
             SectionHeader::new("Arabic display text")
-                .caption("The display helper applies Arabic shaping for painting only.")
+                .caption("Short display labels are reordered; egui handles Arabic letter shaping.")
                 .show(ui);
             ui.add_space(8.0);
             let headline = text::display_text("فسيلة: واجهة عربية أنيقة وسريعة");
@@ -78,7 +78,7 @@ impl Showcase {
             TextField::new(&mut self.arabic_input)
                 .label("Arabic source")
                 .hint("Type logical Unicode text")
-                .helper("Stored as typed; display shaping is a separate step.")
+                .helper("Stored as typed; display reordering is a separate step. Bidi editing remains limited.")
                 .id(Id::unique("showcase-arabic-input"))
                 .show(ui);
             ui.add_space(6.0);

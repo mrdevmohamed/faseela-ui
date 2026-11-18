@@ -78,16 +78,16 @@ impl<'a> Badge<'a> {
 impl Widget for Badge<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let tokens = theme::active_tokens(ui.ctx());
+        let foreground = self.tone.foreground(tokens);
         let font_id = FontId::proportional(BADGE_FONT_SIZE);
         let galley =
-            ui.fonts_mut(|fonts| fonts.layout_no_wrap(self.text.to_owned(), font_id, tokens.text));
+            ui.fonts_mut(|fonts| fonts.layout_no_wrap(self.text.to_owned(), font_id, foreground));
         let size = vec2(
             galley.rect.width() + BADGE_PADDING.x * 2.0,
             galley.rect.height() + BADGE_PADDING.y * 2.0,
         );
         let (rect, response) = ui.allocate_exact_size(size, Sense::hover());
         let fill = self.tone.color(tokens);
-        let foreground = self.tone.foreground(tokens);
         ui.painter().rect_filled(rect, CornerRadius::same(6), fill);
         ui.painter()
             .galley(rect.center() - galley.rect.size() * 0.5, galley, foreground);

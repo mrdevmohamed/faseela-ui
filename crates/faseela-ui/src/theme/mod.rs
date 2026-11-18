@@ -70,7 +70,9 @@ pub fn apply_preset(ctx: &Context, preset: ThemePreset) {
     };
     visuals.faint_bg_color = tokens.elevated_surface;
     visuals.selection.bg_fill = tokens.selection;
-    visuals.selection.stroke = focus;
+    // egui uses this stroke as the foreground of selected text and selectable labels.
+    // Focus has its own token; using it here produces mint-on-green text in the dark preset.
+    visuals.selection.stroke = on_primary;
     visuals.hyperlink_color = tokens.secondary;
     visuals.warn_fg_color = tokens.warning;
     visuals.error_fg_color = tokens.error;

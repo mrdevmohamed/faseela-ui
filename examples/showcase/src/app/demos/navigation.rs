@@ -103,9 +103,14 @@ impl Showcase {
         let gap = 4.0;
         let tab_width = ((width - gap) * 0.5).max(1.0);
         let (outer, _) = ui.allocate_exact_size(vec2(width, 34.0), Sense::hover());
+        let rtl = faseela_ui::direction::is_rtl(ui);
         for (index, label) in labels.iter().enumerate() {
+            let physical_index = if rtl { labels.len() - 1 - index } else { index };
             let rect = Rect::from_min_size(
-                pos2(outer.left() + index as f32 * (tab_width + gap), outer.top()),
+                pos2(
+                    outer.left() + physical_index as f32 * (tab_width + gap),
+                    outer.top(),
+                ),
                 vec2(tab_width, 34.0),
             );
             let selected = self.nav_tab == index;

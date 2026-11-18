@@ -101,10 +101,10 @@ fn all_variants_and_states_keep_foreground_contrast() {
             ButtonVariant::Destructive,
         ] {
             for state in [
-                InteractionState::normal(ControlSize::Medium),
-                InteractionState::hovered(ControlSize::Medium),
-                InteractionState::pressed(ControlSize::Medium),
-                InteractionState::selected(ControlSize::Medium),
+                InteractionState::normal(),
+                InteractionState::hovered(),
+                InteractionState::pressed(),
+                InteractionState::selected(),
             ] {
                 let visuals = variant_visuals(tokens, variant, state);
                 if visuals.fill != Color32::TRANSPARENT {
@@ -115,11 +115,7 @@ fn all_variants_and_states_keep_foreground_contrast() {
                     );
                 }
             }
-            let disabled = variant_visuals(
-                tokens,
-                variant,
-                InteractionState::disabled(ControlSize::Medium),
-            );
+            let disabled = variant_visuals(tokens, variant, InteractionState::disabled());
             assert!(
                 contrast_ratio(disabled.icon, disabled.fill) >= 3.0,
                 "{preset:?} {variant:?} disabled text must remain legible"

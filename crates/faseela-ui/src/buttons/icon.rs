@@ -93,12 +93,7 @@ impl<'a> IconButton<'a> {
                 .1
         };
         response.widget_info(|| {
-            WidgetInfo::selected(
-                Role::Button,
-                valid && enabled,
-                self.selected && enabled,
-                self.label,
-            )
+            WidgetInfo::selected(Role::Button, valid && enabled, self.selected, self.label)
         });
         if !valid {
             return response;
@@ -144,7 +139,12 @@ impl<'a> IconButton<'a> {
         paint_icon(ui, rect, visuals.icon);
         if enabled && response.has_focus() && rect.width() > 4.0 && rect.height() > 4.0 {
             let focus_rect = rect.shrink(2.0);
-            let stroke = bounded_stroke(self.style.focus_stroke, focus_rect);
+            let mut focus = self.style.focus_stroke;
+            let tokens = crate::theme::active_tokens(ui.ctx());
+            if self.selected && visuals.fill == tokens.selection {
+                focus.color = tokens.on_primary;
+            }
+            let stroke = bounded_stroke(focus, focus_rect);
             if !stroke.is_empty() {
                 ui.painter().rect_stroke(
                     focus_rect,

@@ -7,7 +7,7 @@ use crate::{
     direction::{self, Step},
     theme,
 };
-use egui::{Id, Response, RichText, Role, Ui, Vec2, WidgetInfo, accesskit};
+use egui::{EventFilter, Id, Response, RichText, Role, Ui, Vec2, WidgetInfo, accesskit};
 
 const RADIO_SIZE: f32 = 18.0;
 
@@ -141,7 +141,12 @@ impl<'a> RadioGroup<'a> {
     fn show_in(self, ui: &mut Ui) -> Response {
         let tokens = theme::active_tokens(ui.ctx());
         let enabled = ui.is_enabled();
-        let mut selected = (*self.selected).min(self.options.len().saturating_sub(1));
+        let previous = *self.selected;
+        let mut selected = if enabled && !self.options.is_empty() {
+            previous.min(self.options.len() - 1)
+        } else {
+            previous
+        };
         let id_salt = match self.id {
             Some(id) => id,
             None => {
@@ -185,23 +190,40 @@ impl<'a> RadioGroup<'a> {
                         .find(|(_, _, (_, response))| response.has_focus())
                         .map(|(index, _, _)| *index);
                     if let Some(current) = focused {
+                        ui.memory_mut(|memory| {
+                            memory.set_focus_lock_filter(
+                                rows[current].2.1.id,
+                                EventFilter {
+                                    horizontal_arrows: true,
+                                    vertical_arrows: true,
+                                    ..Default::default()
+                                },
+                            )
+                        });
                         let mut target = None;
-                        ui.input(|input| {
-                            if input.key_pressed(egui::Key::ArrowUp) {
+                        ui.input_mut(|input| {
+                            if input.consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp) {
                                 target = Some(Step::Previous);
-                            } else if input.key_pressed(egui::Key::ArrowDown) {
+                            } else if input.consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown)
+                            {
                                 target = Some(Step::Next);
-                            } else if input.key_pressed(if rtl {
-                                egui::Key::ArrowRight
-                            } else {
-                                egui::Key::ArrowLeft
-                            }) {
+                            } else if input.consume_key(
+                                egui::Modifiers::NONE,
+                                if rtl {
+                                    egui::Key::ArrowRight
+                                } else {
+                                    egui::Key::ArrowLeft
+                                },
+                            ) {
                                 target = Some(Step::Previous);
-                            } else if input.key_pressed(if rtl {
-                                egui::Key::ArrowLeft
-                            } else {
-                                egui::Key::ArrowRight
-                            }) {
+                            } else if input.consume_key(
+                                egui::Modifiers::NONE,
+                                if rtl {
+                                    egui::Key::ArrowLeft
+                                } else {
+                                    egui::Key::ArrowRight
+                                },
+                            ) {
                                 target = Some(Step::Next);
                             }
                         });
@@ -233,21 +255,29 @@ impl<'a> RadioGroup<'a> {
                             selected: is_selected,
                             enabled,
                             focused: response.has_focus(),
+                            hovered: response.hovered(),
+                            pressed: response.is_pointer_button_down_on(),
                             tokens,
                             control_size: Vec2::splat(RADIO_SIZE),
                         },
                     );
                 }
-
-                support_text(ui, self.helper, self.error, enabled);
             });
             vertical.response
         });
 
-        let response = inner.inner;
-        if let Some(label) = self.label {
-            response.widget_info(|| WidgetInfo::labeled(Role::RadioGroup, enabled, label));
+        let mut response = inner.inner;
+        if previous != selected {
+            response.mark_changed();
         }
+        response.widget_info(|| {
+            WidgetInfo::labeled(
+                Role::RadioGroup,
+                enabled,
+                self.label.unwrap_or("Radio group"),
+            )
+        });
+        support_text(ui, self.helper, self.error, enabled, &response);
         *self.selected = selected;
         response
     }
@@ -326,12 +356,12 @@ impl<'a> Select<'a> {
     fn show_in(self, ui: &mut Ui) -> Response {
         let enabled = ui.is_enabled();
         let tokens = theme::active_tokens(ui.ctx());
-        let available_width = ui.available_width().max(24.0);
+        let available_width = ui.available_width().max(0.0);
         let width = self
             .width
             .unwrap_or(available_width)
             .min(available_width)
-            .max(24.0);
+            .max(0.0);
         let selected_text = self
             .options
             .get(*self.selected)
@@ -356,10 +386,12 @@ impl<'a> Select<'a> {
                         tokens.disabled_text
                     }),
             );
-            let response = ui
+            let previous = *self.selected;
+            let mut response = ui
                 .push_id(id_salt, |ui| {
                     egui::ComboBox::from_id_salt("select")
                         .width(width)
+                        .truncate()
                         .selected_text(selected_text)
                         .show_ui(ui, |ui| {
                             for (index, option) in self.options.iter().enumerate() {
@@ -371,13 +403,24 @@ impl<'a> Select<'a> {
                         .response
                 })
                 .inner;
+            if previous != *self.selected {
+                response.mark_changed();
+            }
+            if enabled && self.error.is_some() && !response.has_focus() {
+                ui.painter().rect_stroke(
+                    response.rect,
+                    egui::CornerRadius::same(8),
+                    egui::Stroke::new(1.5, tokens.error),
+                    egui::StrokeKind::Inside,
+                );
+            }
             ui.ctx().accesskit_node_builder(response.id, |node| {
                 node.set_label(self.label);
                 if self.error.is_some() {
                     node.set_invalid(accesskit::Invalid::True);
                 }
             });
-            support_text(ui, self.helper, self.error, enabled);
+            support_text(ui, self.helper, self.error, enabled, &response);
             response
         })
         .inner

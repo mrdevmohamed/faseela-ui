@@ -62,22 +62,32 @@ impl Showcase {
                 .show(ui);
             ui.add_space(8.0);
             ui.horizontal_wrapped(|ui| {
-                ui.add(
-                    Button::new("Small")
-                        .size(ControlSize::Small)
-                        .variant(ButtonVariant::Secondary),
-                );
-                ui.add(
-                    Button::new("Medium")
-                        .size(ControlSize::Medium)
-                        .variant(ButtonVariant::Secondary),
-                );
-                ui.add(
-                    Button::new("Large")
-                        .size(ControlSize::Large)
-                        .variant(ButtonVariant::Secondary),
-                );
-                ui.add(Button::new("With icon").icon("+"));
+                for (index, (label, size)) in [
+                    ("Small", ControlSize::Small),
+                    ("Medium", ControlSize::Medium),
+                    ("Large", ControlSize::Large),
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    if Button::new(label)
+                        .size(size)
+                        .variant(ButtonVariant::Secondary)
+                        .id(Id::unique("showcase-size").with(index))
+                        .show(ui)
+                        .clicked()
+                    {
+                        self.last_action = format!("{label} button activated.");
+                    }
+                }
+                if Button::new("With icon")
+                    .icon("+")
+                    .id(Id::unique("showcase-with-icon"))
+                    .show(ui)
+                    .clicked()
+                {
+                    self.last_action = "Leading-icon button activated.".to_owned();
+                }
             });
             ui.add_space(10.0);
             ui.horizontal_wrapped(|ui| {
@@ -132,9 +142,11 @@ impl Showcase {
             });
             ui.add_space(8.0);
             ui.label(
-                RichText::new("Disabled controls remain focusable to assistive technology but never activate.")
-                    .size(10.5)
-                    .color(tokens.muted_text),
+                RichText::new(
+                    "Disabled controls remain named in the accessibility tree and never activate.",
+                )
+                .size(10.5)
+                .color(tokens.muted_text),
             );
         });
     }

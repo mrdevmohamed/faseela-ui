@@ -280,7 +280,109 @@ fn every_badge_tone_meets_text_contrast_in_every_preset() {
                 ratio >= 4.5,
                 "{preset:?} {tone:?} badge contrast is {ratio:.2}:1"
             );
+            let output = render(preset, false, |ui| {
+                Badge::new("Status", tone).show(ui);
+            });
+            let painted = output
+                .shapes
+                .iter()
+                .find_map(|shape| match &shape.shape {
+                    Shape::Text(text) if text.galley.text() == "Status" => {
+                        Some(text.galley.job.sections[0].format.color)
+                    }
+                    _ => None,
+                })
+                .expect("badge text shape");
+            assert_eq!(painted, tone.foreground(tokens));
         }
+    }
+}
+
+#[test]
+fn separators_clamp_large_insets_and_widths_to_their_allocation() {
+    let output = render(ThemePreset::Light, false, |ui| {
+        ui.set_width(40.0);
+        let response = Separator::horizontal()
+            .length(f32::MAX)
+            .inset(f32::MAX)
+            .show(ui);
+        assert!(response.rect.width() <= 40.0);
+    });
+    for clip in &output.shapes {
+        if let Shape::LineSegment { points, .. } = clip.shape {
+            assert!(points[0].x <= points[1].x);
+            assert!(points[0].x >= 0.0 && points[1].x <= 40.0);
+        }
+    }
+}
+
+#[test]
+fn progress_fill_grows_from_the_reading_start() {
+    for rtl in [false, true] {
+        let ctx = setup(ThemePreset::Light, rtl, vec2(200.0, 100.0));
+        let mut bar = Rect::NOTHING;
+        let output = frame(&ctx, vec2(200.0, 100.0), vec![], |ui| {
+            bar = ProgressBar::new(0.25).show(ui).rect;
+        });
+        let fill = output
+            .shapes
+            .iter()
+            .find_map(|clip| match &clip.shape {
+                Shape::Rect(rect) if rect.fill == ThemePreset::Light.tokens().primary => {
+                    Some(rect.rect)
+                }
+                _ => None,
+            })
+            .expect("progress fill");
+        assert_eq!(fill.width(), bar.width() * 0.25);
+        if rtl {
+            assert_eq!(fill.right(), bar.right());
+        } else {
+            assert_eq!(fill.left(), bar.left());
+        }
+    }
+}
+
+#[test]
+fn empty_state_respects_disabled_parent_and_toolbar_rejects_excessive_items() {
+    render(ThemePreset::Light, false, |ui| {
+        ui.add_enabled_ui(false, |ui| {
+            let result = EmptyState::new("Empty").action("Add").show(ui).inner;
+            assert!(!result.action_enabled);
+            assert!(!result.action_clicked);
+        });
+        let result = toolbar_response(
+            ui,
+            Id::unique("oversized"),
+            &vec![ToolbarItem::new("A"); 4097],
+        );
+        assert_eq!(result.state, ToolbarState::NoSpace);
+    });
+}
+
+#[test]
+fn overflow_trigger_identity_survives_inserting_unrelated_siblings() {
+    let ctx = setup(ThemePreset::Light, false, vec2(200.0, 100.0));
+    let mut previous = None;
+    for preceding_label in [false, true] {
+        frame(&ctx, vec2(200.0, 100.0), vec![], |ui| {
+            if preceding_label {
+                ui.label("Unrelated sibling");
+            }
+            let result = toolbar_response(
+                ui,
+                Id::unique("stable-overflow"),
+                &[
+                    ToolbarItem::new("A long command"),
+                    ToolbarItem::new("Another long command"),
+                ],
+            );
+            let id = result.overflow_button_id.expect("overflow trigger");
+            if let Some(previous) = previous {
+                assert_eq!(id, previous);
+            }
+            previous = Some(id);
+        });
     }
 }
 

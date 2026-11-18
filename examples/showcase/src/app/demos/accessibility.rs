@@ -77,12 +77,18 @@ impl Showcase {
                 {
                     ui.memory_mut(|memory| memory.request_focus(target_id));
                 }
-                ui.add(
-                    Button::new("Focus target")
-                        .variant(ButtonVariant::Outline)
-                        .size(ControlSize::Small)
-                        .id(target_id),
-                );
+                if ui
+                    .add(
+                        Button::new("Focus target")
+                            .variant(ButtonVariant::Outline)
+                            .size(ControlSize::Small)
+                            .id(target_id),
+                    )
+                    .clicked()
+                {
+                    self.last_action =
+                        "Focus target activated with pointer or keyboard.".to_owned();
+                }
             });
             let focused = ui.ctx().memory(|memory| memory.focused()) == Some(target_id);
             ui.add_space(4.0);
@@ -98,6 +104,11 @@ impl Showcase {
                 } else {
                     tokens.muted_text
                 }),
+            );
+            ui.label(
+                RichText::new(&self.last_action)
+                    .small()
+                    .color(tokens.muted_text),
             );
         });
 

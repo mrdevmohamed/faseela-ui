@@ -66,39 +66,51 @@ fn response_rect(ctx: &egui::Context, id: Id) -> Rect {
 #[test]
 fn every_section_renders_without_horizontal_overflow_at_target_viewports() {
     for (width, height) in VIEWPORTS {
-        for section in 0..SECTIONS.len() {
-            let ctx = setup(ThemePreset::FaseelaDark, false);
-            let mut app = Showcase {
-                selected_section: section,
-                ..Default::default()
-            };
-            let size = vec2(width, height);
-            let output = frame(&ctx, size, &mut app, vec![]);
-            assert!(
-                !output.shapes.is_empty(),
-                "{width}x{height} section {section} painted nothing"
-            );
-            let used = ctx.globally_used_rect();
-            assert!(
-                used.width() <= width + 1.0,
-                "{width}x{height} section {section} used width {}",
-                used.width()
-            );
-            assert!(
-                used.right() <= width + 1.0,
-                "{width}x{height} section {section} right edge {}",
-                used.right()
-            );
+        for preset in ThemePreset::ALL {
+            for rtl in [false, true] {
+                let ctx = setup(preset, rtl);
+                for section in 0..SECTIONS.len() {
+                    let mut app = Showcase {
+                        selected_section: section,
+                        selected_theme: preset,
+                        rtl,
+                        ..Default::default()
+                    };
+                    let size = vec2(width, height);
+                    let output = frame(&ctx, size, &mut app, vec![]);
+                    assert!(
+                        !output.shapes.is_empty(),
+                        "{width}x{height} {preset:?} rtl={rtl} section {section} painted nothing"
+                    );
+                    let used = ctx.globally_used_rect();
+                    assert!(
+                        used.width() <= width + 1.0,
+                        "{width}x{height} {preset:?} rtl={rtl} section {section} used width {}",
+                        used.width()
+                    );
+                    assert!(
+                        used.right() <= width + 1.0,
+                        "{width}x{height} {preset:?} rtl={rtl} section {section} right edge {}",
+                        used.right()
+                    );
+                    assert!(
+                        used.left() >= -1.0,
+                        "{width}x{height} {preset:?} rtl={rtl} section {section} left edge {}",
+                        used.left()
+                    );
+                }
+            }
         }
     }
 }
 
 #[test]
-fn every_section_renders_in_all_themes_and_directions() {
+fn every_section_renders_with_bundled_fonts_in_all_themes_and_directions() {
     for preset in ThemePreset::ALL {
         for rtl in [false, true] {
             for section in 0..SECTIONS.len() {
                 let ctx = setup(preset, rtl);
+                theme::install_arabic_font(&ctx);
                 let mut app = Showcase {
                     rtl,
                     selected_theme: preset,
@@ -115,6 +127,79 @@ fn every_section_renders_in_all_themes_and_directions() {
                     "{preset:?} rtl={rtl} section {section} overflowed"
                 );
             }
+        }
+    }
+}
+
+#[test]
+fn every_enabled_size_and_icon_demo_has_an_action() {
+    let ctx = setup(ThemePreset::Light, false);
+    let mut app = Showcase {
+        selected_section: 2,
+        selected_theme: ThemePreset::Light,
+        ..Default::default()
+    };
+    let size = vec2(1280.0, 800.0);
+    for (id, expected) in [
+        (Id::unique("showcase-size").with(0), "Small"),
+        (Id::unique("showcase-size").with(1), "Medium"),
+        (Id::unique("showcase-size").with(2), "Large"),
+        (Id::unique("showcase-with-icon"), "Leading-icon"),
+    ] {
+        frame(&ctx, size, &mut app, vec![]);
+        let rect = response_rect(&ctx, id);
+        frame(&ctx, size, &mut app, click_at(rect.center()));
+        assert!(app.last_action.contains(expected), "{}", app.last_action);
+    }
+}
+
+#[test]
+fn mobile_escape_closes_navigation_and_restores_trigger_focus() {
+    let ctx = setup(ThemePreset::Light, false);
+    let mut app = Showcase {
+        mobile_nav_open: true,
+        ..Default::default()
+    };
+    let size = vec2(320.0, 568.0);
+    frame(&ctx, size, &mut app, vec![]);
+    frame(
+        &ctx,
+        size,
+        &mut app,
+        vec![Event::Key {
+            key: Key::Escape,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: Modifiers::NONE,
+        }],
+    );
+    assert!(!app.mobile_nav_open);
+    assert_eq!(
+        ctx.memory(|memory| memory.focused()),
+        Some(Id::unique("showcase-mobile-menu"))
+    );
+}
+
+#[test]
+fn desktop_sidebar_and_tab_order_follow_reading_direction() {
+    for rtl in [false, true] {
+        let ctx = setup(ThemePreset::Light, rtl);
+        let mut app = Showcase {
+            rtl,
+            selected_section: 4,
+            ..Default::default()
+        };
+        frame(&ctx, vec2(1280.0, 800.0), &mut app, vec![]);
+        let sidebar = response_rect(&ctx, Id::unique("showcase-nav").with(4));
+        let first = response_rect(&ctx, Id::unique("showcase-tabs").with(0));
+        let second = response_rect(&ctx, Id::unique("showcase-tabs").with(1));
+        if rtl {
+            assert!(sidebar.center().x > first.center().x);
+            assert!(first.center().x > second.center().x);
+        } else {
+            assert!(sidebar.center().x < first.center().x);
+            assert!(first.center().x < second.center().x);
         }
     }
 }

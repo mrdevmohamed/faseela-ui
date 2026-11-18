@@ -76,7 +76,7 @@ impl<'a> Checkbox<'a> {
                 *self.value = !*self.value;
                 response.mark_changed();
             }
-            support_text(ui, self.helper, self.error, ui.is_enabled());
+            support_text(ui, self.helper, self.error, ui.is_enabled(), &response);
             response
         })
         .inner
@@ -153,7 +153,7 @@ impl<'a> Switch<'a> {
                 *self.value = !*self.value;
                 response.mark_changed();
             }
-            support_text(ui, self.helper, self.error, ui.is_enabled());
+            support_text(ui, self.helper, self.error, ui.is_enabled(), &response);
             response
         })
         .inner

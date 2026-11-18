@@ -119,7 +119,10 @@ impl<'a> ButtonGroup<'a> {
                 })
             })
         });
-        let response = group.inner.inner.response;
+        let mut response = group.inner.inner.response;
+        if *self.selected != selected {
+            response.mark_changed();
+        }
         response.widget_info(|| WidgetInfo::labeled(Role::Toolbar, enabled, self.accessible_label));
         *self.selected = selected;
         SelectionResponse {

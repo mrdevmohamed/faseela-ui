@@ -148,14 +148,20 @@ impl Button<'_> {
         let padding = metrics.padding();
         let content_width = icon_width + gap + text_galley.rect.width();
         let desired_width = content_width + padding.x * 2.0;
+        let available = ui.available_width().max(0.0);
         let width = if self.full_width {
-            ui.available_width().max(desired_width.max(self.min_width))
+            available
         } else {
-            desired_width.max(self.min_width)
+            desired_width
+                .max(self.min_width)
+                .min(ui.max_rect().width().max(0.0))
         };
+        let icon_height = icon_galley
+            .as_ref()
+            .map_or(0.0, |galley| galley.rect.height());
         let height = metrics
             .height()
-            .max(text_galley.rect.height().max(icon_width) + padding.y * 2.0);
+            .max(text_galley.rect.height().max(icon_height) + padding.y * 2.0);
         let sense = if enabled {
             Sense::click()
         } else {
@@ -176,7 +182,6 @@ impl Button<'_> {
             pressed,
             selected: self.selected && enabled,
             disabled: !enabled,
-            size: metrics,
         };
         let visuals = variant_visuals(tokens, self.variant, state);
         response
@@ -186,6 +191,7 @@ impl Button<'_> {
         }
 
         let corner_radius = metrics.corner_radius();
+        let painter = ui.painter().with_clip_rect(ui.clip_rect().intersect(rect));
         if visuals.fill != Color32::TRANSPARENT {
             ui.painter().rect_filled(rect, corner_radius, visuals.fill);
         }
@@ -198,7 +204,7 @@ impl Button<'_> {
             );
         }
 
-        let mut x = rect.center().x - content_width * 0.5;
+        let mut x = rect.left() + ((rect.width() - content_width) * 0.5).max(0.0);
         let center_y = rect.center().y;
         let rtl = crate::direction::is_rtl(ui);
         let icon_rect = icon_galley.as_ref().map(|galley| {
@@ -208,14 +214,10 @@ impl Button<'_> {
         if rtl {
             // Leading content is on the right in an RTL interface.
             let text_pos = egui::pos2(x, center_y - text_galley.rect.height() * 0.5);
-            ui.painter().galley_with_override_text_color(
-                text_pos,
-                text_galley.clone(),
-                visuals.icon,
-            );
+            painter.galley_with_override_text_color(text_pos, text_galley.clone(), visuals.icon);
             x += text_galley.rect.width() + gap;
             if let Some((size, galley)) = icon_rect {
-                ui.painter().galley_with_override_text_color(
+                painter.galley_with_override_text_color(
                     egui::pos2(x, center_y - size.y * 0.5),
                     galley,
                     visuals.icon,
@@ -223,14 +225,14 @@ impl Button<'_> {
             }
         } else {
             if let Some((size, galley)) = icon_rect {
-                ui.painter().galley_with_override_text_color(
+                painter.galley_with_override_text_color(
                     egui::pos2(x, center_y - size.y * 0.5),
                     galley,
                     visuals.icon,
                 );
                 x += size.x + gap;
             }
-            ui.painter().galley_with_override_text_color(
+            painter.galley_with_override_text_color(
                 egui::pos2(x, center_y - text_galley.rect.height() * 0.5),
                 text_galley,
                 visuals.icon,
@@ -240,7 +242,20 @@ impl Button<'_> {
         if enabled && response.has_focus() && rect.width() > 4.0 && rect.height() > 4.0 {
             let focus_rect = rect.shrink(2.0);
             let ring = bounded_stroke(
-                Stroke::new(2.0, focus_color(tokens, self.variant)),
+                Stroke::new(
+                    2.0,
+                    if self.selected
+                        || (pressed
+                            && matches!(
+                                self.variant,
+                                ButtonVariant::Outline | ButtonVariant::Ghost
+                            ))
+                    {
+                        tokens.on_primary
+                    } else {
+                        focus_color(tokens, self.variant)
+                    },
+                ),
                 focus_rect,
             );
             if !ring.is_empty() {

@@ -1,34 +1,35 @@
 //! Embedded Unicode fallback installation, independent of color theme.
-use egui::{Context, FontData, FontDefinitions, FontFamily};
-use std::sync::Arc;
+use egui::{Context, FontData, FontFamily, FontInsert, FontPriority, Id, InsertFontFamily};
 
 /// Install bundled Arabic and broad-Unicode fallback fonts for UI text.
+///
+/// Preserves application-installed fonts and is safe to call repeatedly. Existing fonts take
+/// precedence, followed by Noto Sans Arabic and then DejaVu Sans in both built-in families.
 pub fn install_arabic_font(ctx: &Context) {
-    let mut fonts = FontDefinitions::default();
-    let font_name = "faseela-arabic-fallback".to_owned();
-    let arabic_name = "faseela-noto-sans-arabic".to_owned();
-
-    fonts.font_data.insert(
-        arabic_name.clone(),
-        Arc::new(FontData::from_static(uzor_fonts::NOTO_SANS_ARABIC)),
-    );
-    fonts.font_data.insert(
-        font_name.clone(),
-        Arc::new(FontData::from_static(dejavu::sans::regular())),
-    );
-
-    for family in [FontFamily::Proportional, FontFamily::Monospace] {
-        fonts
-            .families
-            .entry(family.clone())
-            .or_default()
-            .push(arabic_name.clone());
-        fonts
-            .families
-            .entry(family)
-            .or_default()
-            .push(font_name.clone());
+    // egui deduplicates installed fonts by name, but not insertions queued before the next pass.
+    let pass = ctx.cumulative_pass_nr();
+    let already_queued = ctx.data_mut(|data| {
+        let id = Id::unique("faseela_ui::theme::font-install-pass");
+        let previous = data.get_temp::<u64>(id);
+        data.insert_temp(id, pass);
+        previous == Some(pass)
+    });
+    if already_queued {
+        return;
     }
-
-    ctx.set_fonts(fonts);
+    for (name, bytes) in [
+        ("faseela-noto-sans-arabic", uzor_fonts::NOTO_SANS_ARABIC),
+        ("faseela-arabic-fallback", dejavu::sans::regular()),
+    ] {
+        ctx.add_font(FontInsert::new(
+            name,
+            FontData::from_static(bytes),
+            [FontFamily::Proportional, FontFamily::Monospace]
+                .map(|family| InsertFontFamily {
+                    family,
+                    priority: FontPriority::Lowest,
+                })
+                .to_vec(),
+        ));
+    }
 }

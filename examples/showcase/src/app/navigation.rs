@@ -85,6 +85,11 @@ impl Showcase {
     }
 
     pub(super) fn mobile_navigation(&mut self, ui: &mut Ui) {
+        if ui.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+            self.mobile_nav_open = false;
+            ui.memory_mut(|memory| memory.request_focus(Id::unique("showcase-mobile-menu")));
+            return;
+        }
         let tokens = theme::active_tokens(ui.ctx());
         card(ui, |ui| {
             ui.label(

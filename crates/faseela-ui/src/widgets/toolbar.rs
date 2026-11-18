@@ -173,6 +173,13 @@ pub fn toolbar_response(ui: &mut Ui, id: Id, items: &[ToolbarItem<'_>]) -> Toolb
     if items.is_empty() {
         return ToolbarResponse::default();
     }
+    // Match the fitting algorithm's documented work bound before measuring any labels.
+    if items.len() > 4096 {
+        return ToolbarResponse {
+            state: ToolbarState::NoSpace,
+            ..Default::default()
+        };
+    }
 
     let size = ControlSize::Small;
     let font = FontId::proportional(size.font_size());
@@ -253,6 +260,7 @@ pub fn toolbar_response(ui: &mut Ui, id: Id, items: &[ToolbarItem<'_>]) -> Toolb
         let count = fit.overflow.len();
         ui.scope_builder(
             egui::UiBuilder::new()
+                .scope_id(id.with("overflow"))
                 .max_rect(menu_rect)
                 .layout(Layout::centered_and_justified(egui::Direction::TopDown)),
             |ui| {
@@ -282,7 +290,11 @@ pub fn toolbar_response(ui: &mut Ui, id: Id, items: &[ToolbarItem<'_>]) -> Toolb
                     }
                 });
                 response.widget_info(|| {
-                    WidgetInfo::labeled(egui::Role::Button, true, format!("More commands: {label}"))
+                    WidgetInfo::labeled(
+                        egui::Role::Button,
+                        ui.is_enabled(),
+                        format!("More commands: {label}"),
+                    )
                 });
                 overflow_button_id = Some(response.id);
             },

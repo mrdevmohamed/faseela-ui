@@ -83,8 +83,8 @@ impl<'a> ProgressBar<'a> {
                     }
                 });
             }
-            let available = ui.available_width().max(1.0);
-            let width = self.width.unwrap_or(available).min(available).max(1.0);
+            let available = ui.available_width().max(0.0);
+            let width = self.width.unwrap_or(available).min(available);
             let (rect, response) = ui.allocate_exact_size(vec2(width, 8.0), Sense::hover());
             let track = tokens.elevated_surface;
             let radius = CornerRadius::same(4);
@@ -97,7 +97,12 @@ impl<'a> ProgressBar<'a> {
             );
             let fill_width = (rect.width() * self.value).max(0.0);
             if fill_width > 0.0 {
-                let fill = egui::Rect::from_min_size(rect.min, vec2(fill_width, rect.height()))
+                let start = if direction::is_rtl(ui) {
+                    egui::pos2(rect.right() - fill_width, rect.top())
+                } else {
+                    rect.min
+                };
+                let fill = egui::Rect::from_min_size(start, vec2(fill_width, rect.height()))
                     .intersect(rect);
                 ui.painter().rect_filled(fill, radius, tokens.primary);
             }
@@ -303,7 +308,7 @@ impl<'a> EmptyState<'a> {
                 let button = ThemedButton::new(action)
                     .variant(ButtonVariant::Primary)
                     .enabled(self.action_enabled);
-                response.action_enabled = self.action_enabled;
+                response.action_enabled = self.action_enabled && ui.is_enabled();
                 response.action_clicked = button.show(ui).clicked();
             }
             ui.add_space(12.0);

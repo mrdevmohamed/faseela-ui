@@ -106,9 +106,12 @@ impl<'a> TextField<'a> {
         let tokens = theme::active_tokens(ui.ctx());
         let enabled = ui.is_enabled();
         let error_color = self.error.map(|_| tokens.error);
-        let available_width = ui.available_width().max(24.0);
+        let available_width = ui.available_width().max(0.0);
         let requested_width = self.width.unwrap_or(available_width);
-        let width = requested_width.min(available_width).clamp(24.0, 4096.0);
+        let width = requested_width.min(available_width).min(4096.0);
+        // Relax decoration before shrinking the editor in very narrow containers.
+        let horizontal_padding = ((width - 24.0) * 0.5).clamp(0.0, 10.0) as i8;
+        let content_width = (width - f32::from(horizontal_padding) * 2.0).max(0.0);
 
         ui.vertical(|ui| {
             if let Some(label) = self.label {
@@ -125,12 +128,12 @@ impl<'a> TextField<'a> {
                     tokens.disabled
                 })
                 .corner_radius(CornerRadius::same(8))
-                .inner_margin(Margin::symmetric(10, 6));
+                .inner_margin(Margin::symmetric(horizontal_padding, 6));
 
             let inner = frame.show(ui, |ui| {
-                ui.set_width((width - 20.0).max(24.0));
-                ui.horizontal(|ui| {
-                    if let Some(icon) = self.leading_icon {
+                ui.set_width(content_width);
+                crate::direction::horizontal(ui, |ui| {
+                    if let Some(icon) = self.leading_icon.filter(|_| content_width >= 64.0) {
                         ui.label(
                             RichText::new(icon)
                                 .size(FIELD_FONT_SIZE + 1.0)
@@ -146,7 +149,7 @@ impl<'a> TextField<'a> {
                         } else {
                             tokens.disabled_text
                         })
-                        .desired_width(f32::INFINITY);
+                        .desired_width(ui.available_width().max(0.0));
                     if let Some(id) = self.id {
                         edit = edit.id(id);
                     }
@@ -197,7 +200,7 @@ impl<'a> TextField<'a> {
                 ui.ctx()
                     .accesskit_node_builder(response.id, |node| node.set_role(role));
             }
-            support_text(ui, self.helper, self.error, enabled);
+            support_text(ui, self.helper, self.error, enabled, &response);
             response
         })
         .inner
