@@ -43,10 +43,28 @@ mod web {
                 )
                 .await;
 
-            if let Err(error) = result {
-                web_sys::console::error_1(&JsValue::from_str(&format!(
+            match result {
+                Ok(()) => {
+                    // TrunkApplicationStarted only means the WASM module initialized.
+                    // This event marks the later, asynchronous eframe startup boundary.
+                    match web_sys::Event::new("FaseelaUiReady") {
+                        Ok(event) => {
+                            if let Some(window) = web_sys::window() {
+                                if let Err(error) = window.dispatch_event(&event) {
+                                    web_sys::console::error_1(&JsValue::from_str(&format!(
+                                        "Faseela started but could not report readiness: {error:?}"
+                                    )));
+                                }
+                            }
+                        }
+                        Err(error) => web_sys::console::error_1(&JsValue::from_str(&format!(
+                            "Faseela started but could not create its readiness event: {error:?}"
+                        ))),
+                    }
+                }
+                Err(error) => web_sys::console::error_1(&JsValue::from_str(&format!(
                     "Faseela failed to start: {error:?}"
-                )));
+                ))),
             }
         });
         Ok(())
