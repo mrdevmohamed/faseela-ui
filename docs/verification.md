@@ -99,7 +99,7 @@ node tools/browser-smoke.mjs
 FASEELA_BROWSER_MATRIX=1 node tools/browser-smoke.mjs
 ```
 
-The smoke tool needs Node.js 22+ and Chrome/Chromium (`CHROME=/path/to/chrome` overrides the binary).
+The smoke tool needs Node.js 24+ and Chrome/Chromium (`CHROME=/path/to/chrome` overrides the binary).
 Screenshots and a geometry/console `results.json` go to `target/browser-smoke` by default, which is
 ignored by git. Set an output path as the first script argument to retain captures elsewhere. In CI,
 the basic browser captures are uploaded as an artifact; run IDs are available from Actions after the
