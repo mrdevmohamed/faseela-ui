@@ -38,35 +38,39 @@ mod web {
                     Box::new(|cc| {
                         theme::apply_preset(&cc.egui_ctx, ThemePreset::FaseelaDark);
                         theme::install_arabic_font(&cc.egui_ctx);
-                        Ok(Box::<Showcase>::default())
+                        let app = Box::<Showcase>::default();
+                        // The app creator runs during WebRunner initialization, after the
+                        // renderer is ready. Report readiness after the app has been created
+                        // rather than coupling it to the runner future's completion.
+                        report_ready();
+                        Ok(app)
                     }),
                 )
                 .await;
 
-            match result {
-                Ok(()) => {
-                    // TrunkApplicationStarted only means the WASM module initialized.
-                    // This event marks the later, asynchronous eframe startup boundary.
-                    match web_sys::Event::new("FaseelaUiReady") {
-                        Ok(event) => {
-                            if let Some(window) = web_sys::window() {
-                                if let Err(error) = window.dispatch_event(&event) {
-                                    web_sys::console::error_1(&JsValue::from_str(&format!(
-                                        "Faseela started but could not report readiness: {error:?}"
-                                    )));
-                                }
-                            }
-                        }
-                        Err(error) => web_sys::console::error_1(&JsValue::from_str(&format!(
-                            "Faseela started but could not create its readiness event: {error:?}"
-                        ))),
-                    }
-                }
-                Err(error) => web_sys::console::error_1(&JsValue::from_str(&format!(
+            if let Err(error) = result {
+                web_sys::console::error_1(&JsValue::from_str(&format!(
                     "Faseela failed to start: {error:?}"
-                ))),
+                )));
             }
         });
         Ok(())
+    }
+
+    fn report_ready() {
+        match web_sys::Event::new("FaseelaUiReady") {
+            Ok(event) => {
+                if let Some(window) = web_sys::window() {
+                    if let Err(error) = window.dispatch_event(&event) {
+                        web_sys::console::error_1(&JsValue::from_str(&format!(
+                            "Faseela initialized but could not report readiness: {error:?}"
+                        )));
+                    }
+                }
+            }
+            Err(error) => web_sys::console::error_1(&JsValue::from_str(&format!(
+                "Faseela initialized but could not create its readiness event: {error:?}"
+            ))),
+        }
     }
 }

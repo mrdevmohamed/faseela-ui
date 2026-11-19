@@ -271,7 +271,7 @@ try {
   }
 
   // Trunk's event proves WASM instantiation only. FaseelaUiReady is emitted by
-  // startup.rs after eframe::WebRunner::start has completed successfully.
+  // startup.rs after eframe has initialized the renderer and created the app.
   await call("Page.addScriptToEvaluateOnNewDocument", {
     source: [
       'addEventListener("TrunkApplicationStarted", () => {',
